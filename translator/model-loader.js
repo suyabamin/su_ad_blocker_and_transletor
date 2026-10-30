@@ -113,9 +113,23 @@ class ModelLoader {
       this.device = selectedDevice;
 
       // Access global Transformers.js from bundled library
-      const transformers = (typeof globalThis !== 'undefined' && globalThis.transformers)
+      let transformers = (typeof globalThis !== 'undefined' && globalThis.transformers)
         ? globalThis.transformers
         : (typeof window !== 'undefined' ? window.transformers : null);
+
+      if (!transformers || !transformers.pipeline) {
+        try {
+          const modUrl = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+            ? chrome.runtime.getURL('translator/lib/transformers.min.js')
+            : '../translator/lib/transformers.min.js';
+          const mod = await import(modUrl);
+          transformers = mod.default || mod;
+          if (typeof globalThis !== 'undefined') globalThis.transformers = transformers;
+          if (typeof window !== 'undefined') window.transformers = transformers;
+        } catch (dynErr) {
+          console.warn('Dynamic import notice in model-loader:', dynErr);
+        }
+      }
 
       if (!transformers || !transformers.pipeline) {
         throw new Error('Local Transformers.js runtime is not loaded in this context');

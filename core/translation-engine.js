@@ -156,9 +156,23 @@ class TranslationEngine {
       const hasWebGPU = await this.checkWebGPUSupport();
       this.device = hasWebGPU && options.preferredDevice === 'webgpu' ? 'webgpu' : 'wasm';
 
-      const transformers = (typeof globalThis !== 'undefined' && globalThis.transformers)
+      let transformers = (typeof globalThis !== 'undefined' && globalThis.transformers)
         ? globalThis.transformers
         : (typeof window !== 'undefined' ? window.transformers : null);
+
+      if (!transformers || !transformers.pipeline) {
+        try {
+          const modUrl = (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL)
+            ? chrome.runtime.getURL('translator/lib/transformers.min.js')
+            : '../translator/lib/transformers.min.js';
+          const mod = await import(modUrl);
+          transformers = mod.default || mod;
+          if (typeof globalThis !== 'undefined') globalThis.transformers = transformers;
+          if (typeof window !== 'undefined') window.transformers = transformers;
+        } catch (dynErr) {
+          console.warn('Dynamic import notice for transformers.min.js:', dynErr);
+        }
+      }
 
       if (!transformers || !transformers.pipeline) {
         throw new Error('Local Transformers.js inference runtime is not available in this context.');
@@ -167,7 +181,7 @@ class TranslationEngine {
       // Configure transformers environment
       transformers.env.allowRemoteModels = true;
       transformers.env.allowLocalModels = false;
-      transformers.env.useBrowserCache = true;
+      transformers.env.useBrowserCache = (typeof caches !== 'undefined');
 
       const progressCallback = (info) => {
         if (!info) return;
@@ -175,23 +189,27 @@ class TranslationEngine {
           this.status = MODEL_STATES.DOWNLOADING;
           this.bytesLoaded = info.loaded || 0;
           this.bytesTotal = info.total || 0;
-          this.downloadProgress = Math.round((info.loaded / info.total) * 100);
+          this.downloadProgress = Math.min(99, Math.round((info.loaded / info.total) * 100));
           this.currentFile = info.file || '';
           this._notify();
+        } else if (info.status === 'initiate') {
+          this.status = MODEL_STATES.DOWNLOADING;
+          this.currentFile = `Fetching ${info.file || 'model weights'}...`;
+          this._notify();
         } else if (info.status === 'done') {
-          this.status = MODEL_STATES.LOADING_MODEL;
-          this.downloadProgress = 100;
+          this.currentFile = `Downloaded ${info.file || 'asset'}`;
           this._notify();
         }
       };
 
-      this.status = MODEL_STATES.LOADING_MODEL;
+      this.status = MODEL_STATES.DOWNLOADING;
       this._notify();
 
       // Initialize translation pipeline
       this.pipeline = await transformers.pipeline('translation', this.modelId, {
         progress_callback: progressCallback,
-        device: this.device
+        device: this.device,
+        quantized: true
       });
 
       // Verification inference test to ensure pipeline genuinely functions
