@@ -1,0 +1,105 @@
+{
+  "manifest_version": 3,
+  "name": "Su_AdBlock",
+  "version": "1.0.0",
+  "description": "Free Forever. Private by Design. Advanced ad/tracker blocking plus English-to-Bangla selection translation and offline PDF reader.",
+  "icons": {
+    "16": "assets/icon-16.png",
+    "32": "assets/icon-32.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "32": "assets/icon-32.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    },
+    "default_title": "Su_AdBlock - Free Forever. Private by Design."
+  },
+  "background": {
+    "service_worker": "background/service-worker.js"
+  },
+  "options_ui": {
+    "page": "dashboard/dashboard.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "storage",
+    "alarms",
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "contextMenus",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "http://*/*",
+        "https://*/*"
+      ],
+      "css": [
+        "content/selection.css",
+        "content/cosmetic.css"
+      ],
+      "js": [
+        "content/selection.js",
+        "content/cosmetic.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_ads",
+        "enabled": true,
+        "path": "rules/ads.json"
+      },
+      {
+        "id": "ruleset_trackers",
+        "enabled": true,
+        "path": "rules/trackers.json"
+      },
+      {
+        "id": "ruleset_annoyances",
+        "enabled": true,
+        "path": "rules/annoyances.json"
+      }
+    ]
+  },
+  "commands": {
+    "translate_selection": {
+      "suggested_key": {
+        "default": "Alt+Shift+B"
+      },
+      "description": "Translate selected English text to Bangla"
+    },
+    "toggle_protection": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "Toggle master AdBlock protection"
+    }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "cosmetic/selectors.json",
+        "assets/*",
+        "content/selection.css",
+        "translator/pdf-reader/*",
+        "translator/lib/*"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

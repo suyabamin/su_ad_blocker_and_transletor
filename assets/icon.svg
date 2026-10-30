@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" />
+      <stop offset="50%" stop-color="#047857" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#000" flood-opacity="0.25" />
+    </filter>
+  </defs>
+  <path d="M 64 8 L 110 24 C 110 70 82 108 64 120 C 46 108 18 70 18 24 Z" fill="url(#shieldGrad)" stroke="#10b981" stroke-width="4" filter="url(#shadow)" />
+  <!-- Monogram Su + shield emblem -->
+  <path d="M 52 38 C 42 38 38 44 38 50 C 38 60 56 58 56 68 C 56 74 50 78 44 78 C 36 78 34 72 34 72" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M 72 48 L 72 70 C 72 76 76 78 82 78 C 88 78 92 74 92 68 L 92 48" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  <!-- Small dot accent in emerald/white -->
+  <circle cx="64" cy="98" r="4" fill="#a7f3d0" />
+</svg>

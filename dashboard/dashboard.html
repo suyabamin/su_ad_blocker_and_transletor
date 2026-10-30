@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Su_AdBlock Control Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="../assets/icon.svg" alt="Su_AdBlock" class="brand-logo">
+        <div class="brand-info">
+          <h2>Su_AdBlock</h2>
+          <span class="brand-tag">Private by Design</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-category">PROTECTION</div>
+        <a href="#overview" class="nav-item active" data-target="section-overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>1. Overview</span>
+        </a>
+        <a href="#adblocking" class="nav-item" data-target="section-adblocking">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+          <span>2. Ad Blocking</span>
+        </a>
+        <a href="#trackers" class="nav-item" data-target="section-trackers">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>3. Tracker Protection</span>
+        </a>
+        <a href="#cosmetic" class="nav-item" data-target="section-cosmetic">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h20"/><path d="M20 12l-4-4"/><path d="M20 12l-4 4"/></svg>
+          <span>4. Cosmetic Filtering</span>
+        </a>
+        <a href="#whitelist" class="nav-item" data-target="section-whitelist">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>5. Website Allowlist</span>
+        </a>
+        <a href="#customrules" class="nav-item" data-target="section-customrules">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/></svg>
+          <span>6. Custom Rules</span>
+        </a>
+        <a href="#filterlists" class="nav-item" data-target="section-filterlists">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          <span>7. Filter Lists</span>
+        </a>
+        <a href="#statistics" class="nav-item" data-target="section-statistics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>8. Statistics</span>
+        </a>
+
+        <div class="nav-category">TRANSLATION & TOOLS</div>
+        <a href="#translation" class="nav-item" data-target="section-translation">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+          <span>9. English → বাংলা Translator</span>
+        </a>
+        <a href="#history" class="nav-item" data-target="section-history">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span>10. Translation History</span>
+        </a>
+
+        <div class="nav-category">SYSTEM</div>
+        <a href="#settings" class="nav-item" data-target="section-settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>11. Settings</span>
+        </a>
+        <a href="#about" class="nav-item" data-target="section-about">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+          <span>12. About</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="../translator/pdf-reader/reader.html" target="_blank" class="btn btn-primary btn-block">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          Open PDF Reader
+        </a>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 id="page-heading">Overview</h1>
+        </div>
+        <div class="topbar-right">
+          <div class="privacy-pill">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Private & Local</span>
+          </div>
+        </div>
+      </header>
+
+      <div class="content-body">
+        <!-- 1. OVERVIEW -->
+        <section id="section-overview" class="dashboard-section active">
+          <div class="card-grid stats-grid">
+            <div class="metric-card">
+              <span class="metric-label">Ads Blocked</span>
+              <span class="metric-value" id="overview-ads-count">0</span>
+              <span class="metric-sub">Network ad requests</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Trackers Blocked</span>
+              <span class="metric-value" id="overview-trackers-count">0</span>
+              <span class="metric-sub">Telemetry & analytics</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Elements Hidden</span>
+              <span class="metric-value" id="overview-elements-count">0</span>
+              <span class="metric-sub">Cosmetic banners</span>
+            </div>
+            <div class="metric-card">
+              <span class="metric-label">Status</span>
+              <span class="metric-value badge-active" id="overview-status-badge">Protected</span>
+              <span class="metric-sub">DNR Engine Active</span>
+            </div>
+          </div>
+
+          <div class="panel">
+            <h3>Quick System Control</h3>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Master Protection</strong>
+                <p>Toggle network filtering and cosmetic element hiding globally.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="overview-master-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. AD BLOCKING -->
+        <section id="section-adblocking" class="dashboard-section">
+          <div class="panel">
+            <h3>Network Ad Filtering</h3>
+            <p>Uses Chrome DeclarativeNetRequest to block advertising scripts, banners, and ad exchanges at the browser network layer before requests leave your computer.</p>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Ad Blocking Ruleset (Baseline)</strong>
+                <p>Blocks doubleclick, googlesyndication, outbrain, taboola, and 80+ major advertising networks.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="ruleset-ads-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. TRACKER PROTECTION -->
+        <section id="section-trackers" class="dashboard-section">
+          <div class="panel">
+            <h3>Privacy & Tracker Protection</h3>
+            <p>Prevents cross-site behavioral tracking scripts, web beacons, and session recording tools from collecting your browsing habits.</p>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Trackers & Telemetry Ruleset</strong>
+                <p>Blocks Google Analytics, Facebook Pixel, Hotjar, Segment, FullStory, and tracking pixels.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="ruleset-trackers-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. COSMETIC FILTERING -->
+        <section id="section-cosmetic" class="dashboard-section">
+          <div class="panel">
+            <h3>Cosmetic CSS Filtering</h3>
+            <p>Hides blank ad placeholders, sponsored banners, and layout containers that remain on pages after network requests are blocked.</p>
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Enable Cosmetic Filter Engine</strong>
+                <p>Applies safe CSS hiding rules and restrained MutationObserver to clean up webpage layouts.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="cosmetic-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. WEBSITE ALLOWLIST -->
+        <section id="section-whitelist" class="dashboard-section">
+          <div class="panel">
+            <h3>Website Allowlist</h3>
+            <p>Domains listed here are completely exempted from blocking. All network requests and cosmetic filtering are permitted on allowed sites.</p>
+            <div class="input-action-row">
+              <input type="text" id="whitelist-input" placeholder="e.g. example.com or trusted-news.org" class="form-input">
+              <button id="whitelist-add-btn" class="btn btn-primary">Add Domain</button>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Domain</th>
+                    <th>Scope</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="whitelist-table-body">
+                  <tr><td colspan="3" class="empty-cell">No whitelisted websites yet.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. CUSTOM RULES -->
+        <section id="section-customrules" class="dashboard-section">
+          <div class="panel">
+            <h3>Custom Filtering Rules</h3>
+            <p>Create your own DeclarativeNetRequest dynamic rules for custom domains or URL patterns.</p>
+            <div class="custom-rules-form">
+              <div class="form-row">
+                <input type="text" id="custom-rule-pattern" placeholder="Pattern (e.g. annoying-tracker.com or /promo-banner)" class="form-input">
+                <select id="custom-rule-action" class="form-select">
+                  <option value="block">Block</option>
+                  <option value="allow">Allow</option>
+                </select>
+                <input type="text" id="custom-rule-note" placeholder="Optional note / label" class="form-input">
+                <button id="custom-rule-add-btn" class="btn btn-primary">Add Rule</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Rule ID</th>
+                    <th>Pattern / Filter</th>
+                    <th>Action</th>
+                    <th>Note</th>
+                    <th>Status</th>
+                    <th>Remove</th>
+                  </tr>
+                </thead>
+                <tbody id="custom-rules-table-body">
+                  <tr><td colspan="6" class="empty-cell">No custom rules configured.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. FILTER LISTS -->
+        <section id="section-filterlists" class="dashboard-section">
+          <div class="panel">
+            <h3>Filter Lists & Updates</h3>
+            <p>Su_AdBlock comes bundled with high-performance baseline rules that work offline immediately without downloading external scripts.</p>
+            <div class="update-card">
+              <div class="update-info">
+                <strong>Filter Version: <span id="filter-version-text">1.0.0</span></strong>
+                <p id="filter-status-message">Baseline offline filters active.</p>
+              </div>
+              <button id="check-filter-update-btn" class="btn btn-secondary">Check for Updates</button>
+            </div>
+
+            <div class="filter-list-items">
+              <div class="filter-card">
+                <div class="filter-card-header">
+                  <strong>EasyList Baseline (Ads)</strong>
+                  <span class="badge-tag">Static DNR</span>
+                </div>
+                <p>Network rules covering commercial advertisements, banner networks, and popups.</p>
+              </div>
+              <div class="filter-card">
+                <div class="filter-card-header">
+                  <strong>EasyPrivacy Baseline (Trackers)</strong>
+                  <span class="badge-tag">Static DNR</span>
+                </div>
+                <p>Network rules targeting web analytics, cross-site telemetry, and tracking beacons.</p>
+              </div>
+              <div class="filter-card">
+                <div class="filter-card-header">
+                  <strong>Annoyances & Anti-Adblock</strong>
+                  <span class="badge-tag">Static DNR</span>
+                </div>
+                <p>Filtering scripts designed to circumvent user ad blocking or force intrusive popups.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. STATISTICS -->
+        <section id="section-statistics" class="dashboard-section">
+          <div class="panel">
+            <div class="panel-header-action">
+              <h3>Local Protection Statistics</h3>
+              <button id="reset-stats-btn" class="btn btn-danger btn-sm">Reset All Statistics</button>
+            </div>
+            <p>All counters are aggregated purely in local browser storage. No browsing URLs, history, or telemetry are ever uploaded or transmitted.</p>
+            
+            <div class="stats-overview-box">
+              <div class="stats-box-item">
+                <span class="stats-box-val" id="stat-alltime-ads">0</span>
+                <span class="stats-box-lbl">All-Time Ads Blocked</span>
+              </div>
+              <div class="stats-box-item">
+                <span class="stats-box-val" id="stat-alltime-trackers">0</span>
+                <span class="stats-box-lbl">All-Time Trackers Blocked</span>
+              </div>
+              <div class="stats-box-item">
+                <span class="stats-box-val" id="stat-alltime-elements">0</span>
+                <span class="stats-box-lbl">All-Time Elements Hidden</span>
+              </div>
+              <div class="stats-box-item">
+                <span class="stats-box-val" id="stat-session-ads">0</span>
+                <span class="stats-box-lbl">Current Session Ads</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. TRANSLATOR WORKBENCH -->
+        <section id="section-translation" class="dashboard-section">
+          <div class="panel">
+            <h3>English → বাংলা Translator</h3>
+            <p>Translate any English text to Bengali using private local inference. Zero cloud API calls.</p>
+
+            <!-- Translation Model Status Card -->
+            <div class="model-status-card">
+              <div class="model-info">
+                <h4>Local Neural Model: <span class="model-id">Xenova/opus-mt-en-bn</span></h4>
+                <p id="model-status-text">Status: Offline Lexicon ready. Neural model ready to download (approx. 140MB).</p>
+                <div class="progress-bar-container" id="model-progress-bar" style="display: none;">
+                  <div class="progress-fill" id="model-progress-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+              <div class="model-action">
+                <button id="download-model-btn" class="btn btn-primary">Download Neural Model</button>
+              </div>
+            </div>
+
+            <!-- Translation Workbench -->
+            <div class="translator-grid">
+              <div class="translate-box">
+                <div class="box-header">
+                  <span>English (Original)</span>
+                  <button id="clear-source-btn" class="btn-text">Clear</button>
+                </div>
+                <textarea id="translator-source-input" placeholder="Type or paste English text here... (e.g. Hello, welcome to private browsing!)" rows="6"></textarea>
+                <div class="box-footer">
+                  <span id="source-char-count">0 characters</span>
+                  <button id="execute-translate-btn" class="btn btn-primary">Translate to বাংলা</button>
+                </div>
+              </div>
+
+              <div class="translate-box">
+                <div class="box-header">
+                  <span>বাংলা (Bengali Translation)</span>
+                  <button id="copy-result-btn" class="btn-text">Copy</button>
+                </div>
+                <div class="translation-output-box" id="translator-output-text">
+                  <span class="output-placeholder">Bangla translation will appear here...</span>
+                </div>
+                <div class="box-footer">
+                  <span id="output-engine-tag" class="engine-tag">Engine: Lexicon</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 10. TRANSLATION HISTORY -->
+        <section id="section-history" class="dashboard-section">
+          <div class="panel">
+            <div class="panel-header-action">
+              <div>
+                <h3>Translation History (Opt-In)</h3>
+                <p>History is completely private and stored locally. Never uploaded or synced.</p>
+              </div>
+              <button id="clear-all-history-btn" class="btn btn-danger btn-sm">Clear History</button>
+            </div>
+
+            <div class="toggle-row" style="margin-bottom: 16px;">
+              <div class="toggle-info">
+                <strong>Enable Local Translation History</strong>
+                <p>When enabled, translations are stored locally on your device for quick reference.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="history-optin-toggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Timestamp</th>
+                    <th>Original (English)</th>
+                    <th>Translation (বাংলা)</th>
+                    <th>Engine</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="history-table-body">
+                  <tr><td colspan="5" class="empty-cell">No translation history recorded.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 11. SETTINGS -->
+        <section id="section-settings" class="dashboard-section">
+          <div class="panel">
+            <h3>Extension Settings</h3>
+            
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Show Floating Translate Badge</strong>
+                <p>Display the floating "Translate to বাংলা" button when selecting English text on webpages.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-floating-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Auto-Copy Translations</strong>
+                <p>Automatically copy translated Bengali text to clipboard upon translation completion.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-autocopy-toggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-info">
+                <strong>Automatic Filter Updates</strong>
+                <p>Periodically check for updated baseline filter lists via secure HTTPS.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="setting-autoupdate-toggle" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12. ABOUT -->
+        <section id="section-about" class="dashboard-section">
+          <div class="panel">
+            <div class="about-hero">
+              <img src="../assets/icon.svg" alt="Su_AdBlock" width="64" height="64">
+              <h2>Su_AdBlock</h2>
+              <p class="tagline">Free Forever. Private by Design.</p>
+              <span class="version-badge">Version 1.0.0 (Manifest V3)</span>
+            </div>
+
+            <div class="about-details">
+              <h4>Core Principles</h4>
+              <ul>
+                <li><strong>Zero Telemetry:</strong> No tracking, no user identifiers, no analytics, no third-party network calls.</li>
+                <li><strong>Zero Cloud Translation APIs:</strong> Translations run locally in your browser. Your selected text is never uploaded.</li>
+                <li><strong>Dedicated Offline PDF Reader:</strong> Bundled Mozilla PDF.js viewer with selection translation.</li>
+                <li><strong>Declarative Net Request:</strong> High-performance native Chrome network filtering.</li>
+              </ul>
+
+              <h4>Open Source & Attributions</h4>
+              <p>Su_AdBlock uses Mozilla PDF.js (Apache 2.0 License), Hugging Face Transformers.js / ONNX Runtime Web (Apache 2.0 License), and EasyList / EasyPrivacy filter rules (GPLv3 / Attribution).</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Dashboard JavaScript Modules -->
+  <script src="../translator/text-chunker.js"></script>
+  <script src="../translator/lexicon.js"></script>
+  <script src="../translator/lib/transformers.min.js"></script>
+  <script src="../translator/model-loader.js"></script>
+  <script src="pages/overview.js"></script>
+  <script src="pages/filters.js"></script>
+  <script src="pages/whitelist.js"></script>
+  <script src="pages/custom-rules.js"></script>
+  <script src="pages/translation.js"></script>
+  <script src="pages/history.js"></script>
+  <script src="pages/settings.js"></script>
+  <script src="dashboard.js"></script>
+</body>
+</html>

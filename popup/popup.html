@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Su_AdBlock</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="popup-header">
+      <div class="brand">
+        <img src="../assets/icon.svg" alt="Su_AdBlock Logo" class="brand-logo">
+        <div class="brand-text">
+          <h1 class="brand-name">Su_AdBlock</h1>
+          <p class="brand-tagline">Free Forever. Private by Design.</p>
+        </div>
+      </div>
+      <button id="dashboard-btn" class="icon-btn" title="Open Full Dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+
+    <!-- Global Protection Hero Switch -->
+    <section class="hero-section">
+      <div class="hero-status">
+        <div class="status-indicator active" id="status-dot"></div>
+        <div class="status-labels">
+          <span class="status-heading" id="status-title">Protection Active</span>
+          <span class="status-sub" id="status-desc">Ads and trackers are blocked</span>
+        </div>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="global-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </section>
+
+    <!-- Current Website Allowlist Card -->
+    <section class="site-card">
+      <div class="site-info">
+        <span class="site-label">Current Site</span>
+        <span class="site-domain" id="site-domain-text">Detecting...</span>
+      </div>
+      <button id="site-allow-btn" class="btn btn-sm btn-outline">Pause on this site</button>
+    </section>
+
+    <!-- Live Statistics Counters -->
+    <section class="stats-section">
+      <div class="stat-card">
+        <span class="stat-num" id="stat-ads">0</span>
+        <span class="stat-title">Ads Blocked</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-trackers">0</span>
+        <span class="stat-title">Trackers Blocked</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-num" id="stat-elements">0</span>
+        <span class="stat-title">Elements Hidden</span>
+      </div>
+    </section>
+
+    <!-- Quick Shortcuts / Features -->
+    <section class="features-list">
+      <button class="feature-item" id="open-pdf-btn">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
+        </div>
+        <div class="feature-desc">
+          <span class="feature-title">Local PDF Reader</span>
+          <span class="feature-sub">Read & translate PDFs privately</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+
+      <button class="feature-item" id="open-translator-btn">
+        <div class="feature-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>
+        </div>
+        <div class="feature-desc">
+          <span class="feature-title">English → বাংলা Translator</span>
+          <span class="feature-sub">Shortcut: Alt+Shift+B</span>
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>
+    </section>
+
+    <!-- Footer -->
+    <footer class="popup-footer">
+      <span class="footer-badge">100% Offline / Private</span>
+      <span class="footer-version" id="footer-version">v1.0.0</span>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

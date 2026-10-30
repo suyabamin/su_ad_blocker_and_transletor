@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "updatedAt": "2026-10-31T00:00:00Z",
+  "global": [
+    "ins.adsbygoogle",
+    "[id^=\"google_ads_iframe\"]",
+    "[id^=\"div-gpt-ad\"]",
+    ".ad-container",
+    ".ad-wrapper",
+    ".ad-banner",
+    ".ad-box",
+    ".adsbox",
+    ".advertisement",
+    ".advertisement-banner",
+    ".sponsored-post",
+    ".sponsored-content",
+    ".sponsored-ad",
+    "[data-ad-client]",
+    "[data-ad-slot]",
+    "[data-ad-unit]",
+    "[data-adunit]",
+    "[data-google-query-id]",
+    "div[class*=\"-ad-container\"]",
+    "div[class*=\"ad-banner\"]",
+    "div[id*=\"advertisement\"]",
+    "aside.ad-sidebar",
+    "[aria-label=\"advertisement\" i]",
+    "[aria-label=\"sponsored\" i]",
+    ".taboola-ad",
+    ".outbrain-ad"
+  ],
+  "domains": {
+    "yahoo.com": [
+      ".gemini-item",
+      "#mrt-node-Lead-0-Ad",
+      ".native-ad-wrapper"
+    ],
+    "reddit.com": [
+      "[data-promoted=\"true\"]",
+      ".promotedlink"
+    ],
+    "twitter.com": [
+      "[data-testid=\"placementTracking\"]"
+    ],
+    "x.com": [
+      "[data-testid=\"placementTracking\"]"
+    ]
+  }
+}
