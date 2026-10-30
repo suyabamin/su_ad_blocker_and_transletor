@@ -133,12 +133,15 @@ window.initTranslationPage = function () {
       if (st.status === 'NOT_DOWNLOADED') {
         if (modelStatusDot) modelStatusDot.className = 'gt-status-dot';
         if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Structured NMT Active (Offline)';
-        modelStatusText.textContent = 'Status: Local Structured NMT active. Click Download to cache full neural model weights locally.';
+        modelStatusText.textContent = 'Status: Structured NMT Engine is active and working offline. ' +
+          'The optional neural model download requires internet (first time only) and may not complete ' +
+          'in all Chrome versions due to WebAssembly threading restrictions.';
         if (progressBar) progressBar.style.display = 'none';
         if (progressMeta) progressMeta.style.display = 'none';
         if (downloadModelBtn) {
           downloadModelBtn.disabled = false;
-          downloadModelBtn.textContent = 'Download Neural Model';
+          downloadModelBtn.textContent = 'Download Neural Model (Optional)';
+        }
         }
       } else if (st.status === 'DOWNLOADING') {
         if (modelStatusDot) modelStatusDot.className = 'gt-status-dot downloading';
@@ -176,8 +179,15 @@ window.initTranslationPage = function () {
         }
       } else if (st.status === 'DOWNLOAD_FAILED' || st.status === 'MODEL_LOADING_FAILED') {
         if (modelStatusDot) modelStatusDot.className = 'gt-status-dot error';
-        if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Download Notice';
-        modelStatusText.textContent = `Download note: ${st.errorMessage || 'Network unavailable'}. Using Structured NMT Engine.`;
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Neural Model Unavailable';
+        // Sanitize: truncate any unexpectedly long error message (raw code guard)
+        let safeMsg = st.errorMessage || 'Download unavailable.';
+        if (safeMsg.length > 400 || safeMsg.includes('__webpack') || safeMsg.includes('var ') || safeMsg.includes('function(')) {
+          safeMsg = 'ONNX runtime initialization failed (Chrome MV3 WASM restriction). Structured NMT Engine is active.';
+        }
+        modelStatusText.textContent = `Notice: ${safeMsg} Structured NMT Engine is fully active.`;
+        if (progressBar) progressBar.style.display = 'none';
+        if (progressMeta) progressMeta.style.display = 'none';
         if (downloadModelBtn) {
           downloadModelBtn.disabled = false;
           downloadModelBtn.textContent = 'Retry Download';
@@ -192,7 +202,12 @@ window.initTranslationPage = function () {
       try {
         await engine.loadNeuralModel({ preferredDevice: 'auto' });
       } catch (err) {
-        console.warn('Neural model download error:', err.message);
+        // Error is already sanitized inside TranslationEngine.loadNeuralModel.
+        // Just log a short note — never display raw error objects in the UI.
+        const safeMsg = (err && err.message && err.message.length < 300)
+          ? err.message
+          : 'Neural model initialization failed. Structured NMT Engine remains active.';
+        console.warn('[translation.js] Neural model note:', safeMsg);
       }
     });
   }

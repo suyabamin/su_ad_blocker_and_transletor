@@ -126,6 +126,11 @@ class TranslationEngine {
   /**
    * Downloads and initializes the neural model pipeline.
    * Uses Transformers.js with progress callbacks.
+   *
+   * IMPORTANT: Chrome MV3 extensions cannot run multi-threaded ONNX WASM
+   * (requires SharedArrayBuffer + COOP/COEP headers).  We must set
+   * numThreads=1 and proxy=false on the ort-web env BEFORE the first
+   * pipeline call, and point wasmPaths to the CDN (or bundled files).
    */
   async loadNeuralModel(options = {}) {
     if (this.pipeline && this.status === MODEL_STATES.MODEL_READY) {
@@ -140,7 +145,7 @@ class TranslationEngine {
             resolve(this.pipeline);
           } else if (st.status === MODEL_STATES.DOWNLOAD_FAILED || st.status === MODEL_STATES.MODEL_LOADING_FAILED) {
             unsub();
-            reject(new Error(st.errorMessage));
+            reject(new Error(st.errorMessage || 'Model loading failed'));
           }
         });
       });
@@ -154,8 +159,9 @@ class TranslationEngine {
     try {
       // Determine device
       const hasWebGPU = await this.checkWebGPUSupport();
-      this.device = hasWebGPU && options.preferredDevice === 'webgpu' ? 'webgpu' : 'wasm';
+      this.device = (hasWebGPU && options.preferredDevice === 'webgpu') ? 'webgpu' : 'wasm';
 
+      // --- Load Transformers.js runtime ---
       let transformers = (typeof globalThis !== 'undefined' && globalThis.transformers)
         ? globalThis.transformers
         : (typeof window !== 'undefined' ? window.transformers : null);
@@ -170,19 +176,45 @@ class TranslationEngine {
           if (typeof globalThis !== 'undefined') globalThis.transformers = transformers;
           if (typeof window !== 'undefined') window.transformers = transformers;
         } catch (dynErr) {
-          console.warn('Dynamic import notice for transformers.min.js:', dynErr);
+          // Sanitize: never surface raw bundled code in the UI
+          const msg = (dynErr && dynErr.message)
+            ? dynErr.message.slice(0, 200)
+            : 'Could not import local runtime';
+          throw new Error('Runtime import failed: ' + msg);
         }
       }
 
       if (!transformers || !transformers.pipeline) {
-        throw new Error('Local Transformers.js inference runtime is not available in this context.');
+        throw new Error(
+          'Local inference runtime is not available. ' +
+          'The neural model requires Transformers.js to be loaded in the dashboard page.'
+        );
       }
 
-      // Configure transformers environment
+      // --- Configure ONNX WASM for Chrome MV3 (single-thread, no proxy) ---
+      //  transformers.env.backends.onnx is the ort-web env object.
+      //  It may be undefined until first use, so we set defaults via the
+      //  env.wasm shim that Transformers.js v2.x exposes.
+      try {
+        // These keys exist on transformers.env in v2.x (backed by ort-web env)
+        if (transformers.env && transformers.env.backends && transformers.env.backends.onnx) {
+          const onnxEnv = transformers.env.backends.onnx;
+          if (onnxEnv.wasm) {
+            onnxEnv.wasm.numThreads = 1;   // no SharedArrayBuffer needed
+            onnxEnv.wasm.proxy = false;     // no Web Worker proxy
+            // Use CDN for wasm binaries (avoids bundling 15 MB of .wasm files)
+            onnxEnv.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.18.0/dist/';
+          }
+        }
+      } catch (_cfgErr) {
+        // Non-fatal; proceed and let ort-web fall back
+      }
+
       transformers.env.allowRemoteModels = true;
       transformers.env.allowLocalModels = false;
       transformers.env.useBrowserCache = (typeof caches !== 'undefined');
 
+      // --- Progress callback ---
       const progressCallback = (info) => {
         if (!info) return;
         if (info.status === 'progress' && info.total) {
@@ -194,7 +226,7 @@ class TranslationEngine {
           this._notify();
         } else if (info.status === 'initiate') {
           this.status = MODEL_STATES.DOWNLOADING;
-          this.currentFile = `Fetching ${info.file || 'model weights'}...`;
+          this.currentFile = `Fetching ${info.file || 'model weights'}…`;
           this._notify();
         } else if (info.status === 'done') {
           this.currentFile = `Downloaded ${info.file || 'asset'}`;
@@ -205,14 +237,17 @@ class TranslationEngine {
       this.status = MODEL_STATES.DOWNLOADING;
       this._notify();
 
-      // Initialize translation pipeline
+      // --- Initialize pipeline ---
       this.pipeline = await transformers.pipeline('translation', this.modelId, {
         progress_callback: progressCallback,
         device: this.device,
         quantized: true
       });
 
-      // Verification inference test to ensure pipeline genuinely functions
+      this.status = MODEL_STATES.LOADING_MODEL;
+      this._notify();
+
+      // Warm-up / verification inference
       const testOut = await this.pipeline('Hello', {
         src_lang: 'eng_Latn',
         tgt_lang: 'ben_Beng',
@@ -220,19 +255,47 @@ class TranslationEngine {
       });
 
       if (!testOut || !Array.isArray(testOut) || !testOut[0] || !testOut[0].translation_text) {
-        throw new Error('Model verification inference test failed.');
+        throw new Error('Model warm-up inference returned no output.');
       }
 
       this.status = MODEL_STATES.MODEL_READY;
       this.downloadProgress = 100;
       this._notify();
       return this.pipeline;
+
     } catch (err) {
-      console.warn('Neural model loading note:', err.message);
+      // ─── Sanitize error: NEVER let raw webpack/wasm code appear in the UI ───
+      const rawMsg = (err && err.message) ? String(err.message) : String(err);
+      let friendlyMsg;
+
+      if (rawMsg.includes('SharedArrayBuffer') || rawMsg.includes('cross-origin')) {
+        friendlyMsg =
+          'WASM multi-threading blocked (SharedArrayBuffer requires COOP/COEP headers). ' +
+          'The Structured NMT Engine is still fully active.';
+      } else if (rawMsg.includes('no available backend') || rawMsg.includes('wasm')) {
+        friendlyMsg =
+          'ONNX WebAssembly backend failed to initialize. ' +
+          'This is a known Chrome MV3 limitation. ' +
+          'The Structured NMT Engine is still fully active.';
+      } else if (rawMsg.includes('fetch') || rawMsg.includes('network') || rawMsg.toLowerCase().includes('failed to fetch')) {
+        friendlyMsg = 'Network error while downloading model weights. Please check your internet connection and retry.';
+      } else if (rawMsg.includes('Runtime import')) {
+        friendlyMsg = rawMsg.slice(0, 200);
+      } else if (rawMsg.length > 300 || rawMsg.includes('__webpack') || rawMsg.includes('var ')) {
+        // Caught raw bundled code in the message — sanitize completely
+        friendlyMsg =
+          'Neural model initialization failed (ONNX runtime error). ' +
+          'The Structured NMT Engine is still fully active and working.';
+      } else {
+        friendlyMsg = rawMsg.slice(0, 300);
+      }
+
+      console.warn('[TranslationEngine] Neural model load note:', rawMsg.slice(0, 200));
       this.status = MODEL_STATES.DOWNLOAD_FAILED;
-      this.errorMessage = err.message || 'Failed to download or initialize neural model weights.';
+      this.errorMessage = friendlyMsg;
       this._notify();
-      throw err;
+      // Don't re-throw raw error — callers only need to know it failed
+      throw new Error(friendlyMsg);
     }
   }
 
