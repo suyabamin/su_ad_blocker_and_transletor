@@ -16,6 +16,7 @@ try {
     '../core/filter-update-manager.js',
     '../translator/text-chunker.js',
     '../translator/lexicon.js',
+    '../core/translation-engine.js',
     '../core/translation-manager.js',
     'message-router.js',
     'context-menu.js',

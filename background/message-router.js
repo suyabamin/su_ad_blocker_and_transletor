@@ -149,6 +149,11 @@ class MessageRouter {
           return { success: true, ...result };
         }
 
+        case 'GET_TRANSLATION_MODEL_STATUS': {
+          const state = this.services.translationManager.getState();
+          return { success: true, state };
+        }
+
         case 'GET_TRANSLATION_HISTORY': {
           await this.services.translationManager.loadHistory();
           const history = this.services.translationManager.getHistory();

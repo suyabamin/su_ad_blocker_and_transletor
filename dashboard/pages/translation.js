@@ -1,159 +1,257 @@
 /**
- * Su_AdBlock Dashboard - Translation Page Controller
- * Handles local model lifecycle, download progress, and translation workbench.
+ * Su_AdBlock Dashboard - Google-Translate-Inspired Translation Workbench
+ * Connects UI panels to the unified TranslationEngine.
  * Free Forever. Private by Design.
  */
 
 window.initTranslationPage = function () {
   const sourceInput = document.getElementById('translator-source-input');
-  const outputText = document.getElementById('translator-output-text');
+  const outputContainer = document.getElementById('translator-output-text');
   const executeBtn = document.getElementById('execute-translate-btn');
-  const copyBtn = document.getElementById('copy-result-btn');
+  const pasteBtn = document.getElementById('paste-source-btn');
   const clearBtn = document.getElementById('clear-source-btn');
+  const copyBtn = document.getElementById('copy-result-btn');
+  const selectAllBtn = document.getElementById('select-output-btn');
+  const retryBtn = document.getElementById('retry-translate-btn');
   const charCount = document.getElementById('source-char-count');
   const engineTag = document.getElementById('output-engine-tag');
 
+  const modelStatusDot = document.getElementById('model-status-dot');
+  const modelStatusBadgeText = document.getElementById('model-status-badge-text');
   const modelStatusText = document.getElementById('model-status-text');
   const downloadModelBtn = document.getElementById('download-model-btn');
   const progressBar = document.getElementById('model-progress-bar');
   const progressFill = document.getElementById('model-progress-fill');
+  const progressMeta = document.getElementById('model-progress-meta');
+  const fileInfo = document.getElementById('model-file-info');
+  const bytesInfo = document.getElementById('model-bytes-info');
 
-  let modelLoader = null;
-  if (typeof ModelLoader !== 'undefined') {
-    modelLoader = new ModelLoader();
+  let engine = null;
+  if (typeof TranslationEngine !== 'undefined') {
+    engine = new TranslationEngine();
   }
 
-  // Update char count
-  if (sourceInput && charCount) {
-    sourceInput.addEventListener('input', () => {
-      charCount.textContent = `${sourceInput.value.length} characters`;
-    });
-  }
+  let activeTranslation = '';
 
-  // Check URL query for passed text
-  const hash = window.location.hash;
-  if (hash.includes('?text=')) {
-    const rawParam = hash.split('?text=')[1];
-    if (rawParam && sourceInput) {
-      sourceInput.value = decodeURIComponent(rawParam);
-      charCount.textContent = `${sourceInput.value.length} characters`;
-      setTimeout(() => executeTranslation(), 200);
+  // Update char counter
+  function updateCharCount() {
+    if (sourceInput && charCount) {
+      const len = sourceInput.value.length;
+      charCount.textContent = `${len.toLocaleString()} / 5,000`;
+      if (len > 5000) {
+        charCount.style.color = '#d93025';
+      } else {
+        charCount.style.color = '#70757a';
+      }
     }
   }
 
-  // Download Neural Model
-  if (downloadModelBtn && modelLoader) {
-    downloadModelBtn.addEventListener('click', async () => {
-      downloadModelBtn.disabled = true;
-      downloadModelBtn.textContent = 'Downloading...';
-      if (progressBar) progressBar.style.display = 'block';
+  if (sourceInput) {
+    sourceInput.addEventListener('input', updateCharCount);
 
-      modelLoader.onStatusChange((st) => {
-        if (st.status === 'loading') {
-          if (progressFill) progressFill.style.width = `${st.progress}%`;
-          if (modelStatusText) {
-            modelStatusText.textContent = `Downloading ${st.currentFile || 'model files'}: ${st.progress}%`;
-          }
-        } else if (st.status === 'ready') {
-          if (progressFill) progressFill.style.width = '100%';
-          if (modelStatusText) {
-            modelStatusText.textContent = `Neural Model Ready! Device: ${st.device.toUpperCase()}. Offline translation active.`;
-          }
-          downloadModelBtn.textContent = 'Model Cached & Ready';
-          downloadModelBtn.classList.remove('btn-primary');
-          downloadModelBtn.classList.add('btn-secondary');
-        } else if (st.status === 'error') {
-          if (modelStatusText) {
-            modelStatusText.textContent = `Download notice: ${st.errorMessage}. Using offline lexicon.`;
-          }
-          downloadModelBtn.disabled = false;
-          downloadModelBtn.textContent = 'Retry Download';
-        }
-      });
-
-      try {
-        await modelLoader.loadModel({ preferredDevice: 'auto' });
-      } catch (err) {
-        console.warn('Model download notice:', err.message);
+    // Ctrl + Enter shortcut
+    sourceInput.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        executeTranslation();
       }
     });
   }
 
-  // Execute Translation
+  // Paste from clipboard
+  if (pasteBtn && sourceInput) {
+    pasteBtn.addEventListener('click', async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text) {
+          sourceInput.value = text;
+          updateCharCount();
+          executeTranslation();
+        }
+      } catch (err) {
+        console.warn('Clipboard read notice:', err);
+      }
+    });
+  }
+
+  // Clear text
+  if (clearBtn && sourceInput) {
+    clearBtn.addEventListener('click', () => {
+      sourceInput.value = '';
+      updateCharCount();
+      activeTranslation = '';
+      if (outputContainer) {
+        outputContainer.innerHTML = '<span class="gt-placeholder">অনুবাদ এখানে প্রদর্শিত হবে (Translation will appear here)...</span>';
+      }
+    });
+  }
+
+  // Select all output text
+  if (selectAllBtn && outputContainer) {
+    selectAllBtn.addEventListener('click', () => {
+      const text = outputContainer.textContent;
+      if (!text || text.includes('প্রদর্শিত হবে')) return;
+      const range = document.createRange();
+      range.selectNodeContents(outputContainer);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    });
+  }
+
+  // Copy result
+  if (copyBtn && outputContainer) {
+    copyBtn.addEventListener('click', () => {
+      if (!activeTranslation) return;
+      navigator.clipboard.writeText(activeTranslation).then(() => {
+        copyBtn.classList.add('copied');
+        copyBtn.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><polyline points="20 6 9 17 4 12"/></svg>
+          <span>Copied!</span>
+        `;
+        setTimeout(() => {
+          copyBtn.classList.remove('copied');
+          copyBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <span>Copy</span>
+          `;
+        }, 1500);
+      });
+    });
+  }
+
+  // Retry
+  if (retryBtn) {
+    retryBtn.addEventListener('click', () => executeTranslation());
+  }
+
+  // Status Listener
+  if (engine) {
+    engine.onStatusChange((st) => {
+      if (!modelStatusText) return;
+
+      if (st.status === 'NOT_DOWNLOADED') {
+        if (modelStatusDot) modelStatusDot.className = 'gt-status-dot';
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Structured NMT Active (Offline)';
+        modelStatusText.textContent = 'Status: Local Structured NMT active. Click Download to cache full neural model weights locally.';
+        if (progressBar) progressBar.style.display = 'none';
+        if (progressMeta) progressMeta.style.display = 'none';
+        if (downloadModelBtn) {
+          downloadModelBtn.disabled = false;
+          downloadModelBtn.textContent = 'Download Neural Model';
+        }
+      } else if (st.status === 'DOWNLOADING') {
+        if (modelStatusDot) modelStatusDot.className = 'gt-status-dot downloading';
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = `Downloading (${st.progress}%)`;
+        modelStatusText.textContent = `Downloading ONNX model weights to browser cache...`;
+        if (progressBar) progressBar.style.display = 'block';
+        if (progressFill) progressFill.style.width = `${st.progress}%`;
+        if (progressMeta) progressMeta.style.display = 'flex';
+        if (fileInfo) fileInfo.textContent = st.currentFile || 'Downloading model assets...';
+        if (bytesInfo && st.bytesTotal) {
+          const loadedMb = (st.bytesLoaded / 1024 / 1024).toFixed(1);
+          const totalMb = (st.bytesTotal / 1024 / 1024).toFixed(1);
+          bytesInfo.textContent = `${loadedMb} MB / ${totalMb} MB (${st.progress}%)`;
+        }
+        if (downloadModelBtn) {
+          downloadModelBtn.disabled = true;
+          downloadModelBtn.textContent = 'Downloading...';
+        }
+      } else if (st.status === 'LOADING_MODEL') {
+        if (modelStatusDot) modelStatusDot.className = 'gt-status-dot downloading';
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Initializing ONNX Runtime...';
+        modelStatusText.textContent = 'Compiling WebAssembly / WebGPU execution pipeline...';
+        if (progressBar) progressBar.style.display = 'block';
+        if (progressFill) progressFill.style.width = '100%';
+      } else if (st.status === 'MODEL_READY') {
+        if (modelStatusDot) modelStatusDot.className = 'gt-status-dot active';
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = `Neural Model Ready (${st.device.toUpperCase()})`;
+        modelStatusText.textContent = `Status: Neural model cached & verified. Device: ${st.device.toUpperCase()}. 100% offline neural translation active.`;
+        if (progressBar) progressBar.style.display = 'none';
+        if (progressMeta) progressMeta.style.display = 'none';
+        if (downloadModelBtn) {
+          downloadModelBtn.disabled = true;
+          downloadModelBtn.textContent = 'Model Cached & Ready';
+          downloadModelBtn.classList.add('ready');
+        }
+      } else if (st.status === 'DOWNLOAD_FAILED' || st.status === 'MODEL_LOADING_FAILED') {
+        if (modelStatusDot) modelStatusDot.className = 'gt-status-dot error';
+        if (modelStatusBadgeText) modelStatusBadgeText.textContent = 'Download Notice';
+        modelStatusText.textContent = `Download note: ${st.errorMessage || 'Network unavailable'}. Using Structured NMT Engine.`;
+        if (downloadModelBtn) {
+          downloadModelBtn.disabled = false;
+          downloadModelBtn.textContent = 'Retry Download';
+        }
+      }
+    });
+  }
+
+  // Download Neural Model Button Handler
+  if (downloadModelBtn && engine) {
+    downloadModelBtn.addEventListener('click', async () => {
+      try {
+        await engine.loadNeuralModel({ preferredDevice: 'auto' });
+      } catch (err) {
+        console.warn('Neural model download error:', err.message);
+      }
+    });
+  }
+
+  // Execute Translation Function
   async function executeTranslation() {
     const text = sourceInput ? sourceInput.value.trim() : '';
     if (!text) return;
 
-    if (outputText) {
-      outputText.innerHTML = '<span class="output-placeholder">Translating locally...</span>';
+    if (outputContainer) {
+      outputContainer.innerHTML = `
+        <div class="gt-loading-state">
+          <div class="gt-spinner"></div>
+          <span>Translating with local neural engine...</span>
+        </div>
+      `;
     }
 
-    // 1. Try local neural model if loaded
-    if (modelLoader && modelLoader.status === 'ready') {
-      try {
-        const translated = await modelLoader.translate(text);
-        if (outputText) outputText.textContent = translated;
-        if (engineTag) {
-          engineTag.textContent = 'Engine: Neural ONNX';
-          engineTag.style.background = '#dbeafe';
-          engineTag.style.color = '#1d4ed8';
+    try {
+      let res = null;
+      if (engine) {
+        res = await engine.translate(text);
+      } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        res = await new Promise((resolve) => {
+          chrome.runtime.sendMessage({
+            action: 'TRANSLATE_TEXT',
+            payload: { text }
+          }, (reply) => resolve(reply));
+        });
+      }
+
+      if (res && res.translation) {
+        activeTranslation = res.translation;
+        if (outputContainer) outputContainer.textContent = activeTranslation;
+        if (engineTag && res.engine) {
+          engineTag.textContent = `Engine: ${res.engine}`;
         }
-        return;
-      } catch (e) {
-        console.warn('Neural translation error, falling back:', e);
+      } else {
+        throw new Error((res && res.error) || 'Translation engine returned empty response.');
+      }
+    } catch (err) {
+      if (outputContainer) {
+        outputContainer.textContent = `Translation error: ${err.message}`;
       }
     }
+  }
 
-    // 2. Fallback to background translation manager / lexicon
-    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-      chrome.runtime.sendMessage({
-        action: 'TRANSLATE_TEXT',
-        payload: { text }
-      }, (res) => {
-        if (res && res.success) {
-          if (outputText) outputText.textContent = res.translation;
-          if (engineTag) {
-            engineTag.textContent = `Engine: ${res.engine === 'neural' ? 'Neural' : 'Offline Lexicon'}`;
-          }
-        } else {
-          fallbackLexicon(text);
-        }
-      });
-    } else {
-      fallbackLexicon(text);
+  if (executeBtn) {
+    executeBtn.addEventListener('click', executeTranslation);
+  }
+
+  // Check URL query parameters for passed text (from context menu or other pages)
+  const hash = window.location.hash;
+  if (hash.includes('?text=')) {
+    const raw = hash.split('?text=')[1];
+    if (raw && sourceInput) {
+      sourceInput.value = decodeURIComponent(raw);
+      updateCharCount();
+      setTimeout(executeTranslation, 150);
     }
-  }
-
-  function fallbackLexicon(text) {
-    if (typeof LexiconTranslator !== 'undefined') {
-      const res = LexiconTranslator.translate(text);
-      if (outputText) outputText.textContent = res;
-      if (engineTag) engineTag.textContent = 'Engine: Offline Lexicon';
-    } else if (outputText) {
-      outputText.textContent = text;
-    }
-  }
-
-  if (executeBtn) executeBtn.addEventListener('click', executeTranslation);
-
-  // Copy result
-  if (copyBtn && outputText) {
-    copyBtn.addEventListener('click', () => {
-      const text = outputText.textContent;
-      if (!text || text.includes('appear here')) return;
-      navigator.clipboard.writeText(text).then(() => {
-        copyBtn.textContent = 'Copied!';
-        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1500);
-      });
-    });
-  }
-
-  // Clear source
-  if (clearBtn && sourceInput) {
-    clearBtn.addEventListener('click', () => {
-      sourceInput.value = '';
-      if (charCount) charCount.textContent = '0 characters';
-      if (outputText) outputText.innerHTML = '<span class="output-placeholder">Bangla translation will appear here...</span>';
-    });
   }
 };

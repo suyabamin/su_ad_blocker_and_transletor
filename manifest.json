@@ -49,6 +49,7 @@
         "content/cosmetic.css"
       ],
       "js": [
+        "content/translation-popup.js",
         "content/selection.js",
         "content/cosmetic.js"
       ],
@@ -94,6 +95,7 @@
         "cosmetic/selectors.json",
         "assets/*",
         "content/selection.css",
+        "content/translation-popup.js",
         "translator/pdf-reader/*",
         "translator/lib/*"
       ],

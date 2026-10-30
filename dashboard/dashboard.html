@@ -325,16 +325,28 @@
         <!-- 9. TRANSLATOR WORKBENCH -->
         <section id="section-translation" class="dashboard-section">
           <div class="panel">
-            <h3>English → বাংলা Translator</h3>
-            <p>Translate any English text to Bengali using private local inference. Zero cloud API calls.</p>
+            <div class="gt-workbench-header">
+              <div>
+                <h3>English → বাংলা Translator</h3>
+                <p>Private, local machine translation running on device. Zero cloud translation APIs.</p>
+              </div>
+              <div class="gt-header-badge">
+                <span class="gt-status-dot" id="model-status-dot"></span>
+                <span id="model-status-badge-text">Model Ready (Offline Engine)</span>
+              </div>
+            </div>
 
             <!-- Translation Model Status Card -->
-            <div class="model-status-card">
+            <div class="model-status-card" id="model-status-card">
               <div class="model-info">
-                <h4>Local Neural Model: <span class="model-id">Xenova/opus-mt-en-bn</span></h4>
-                <p id="model-status-text">Status: Offline Lexicon ready. Neural model ready to download (approx. 140MB).</p>
+                <h4>Neural Model: <span class="model-id" id="model-name-display">Xenova/nllb-200-distilled-600M (OPUS-MT / NLLB)</span></h4>
+                <p id="model-status-text">Status: Structured NMT Engine active. Click Download to cache full neural model weights locally.</p>
                 <div class="progress-bar-container" id="model-progress-bar" style="display: none;">
                   <div class="progress-fill" id="model-progress-fill" style="width: 0%;"></div>
+                </div>
+                <div class="model-progress-meta" id="model-progress-meta" style="display: none;">
+                  <span id="model-file-info">Downloading...</span>
+                  <span id="model-bytes-info">0 MB / 0 MB</span>
                 </div>
               </div>
               <div class="model-action">
@@ -342,30 +354,64 @@
               </div>
             </div>
 
-            <!-- Translation Workbench -->
-            <div class="translator-grid">
-              <div class="translate-box">
-                <div class="box-header">
-                  <span>English (Original)</span>
-                  <button id="clear-source-btn" class="btn-text">Clear</button>
+            <!-- Google-Translate-Inspired Split Panels -->
+            <div class="gt-translator-container">
+              <!-- Left: English Panel -->
+              <div class="gt-panel gt-panel-source">
+                <div class="gt-panel-header">
+                  <div class="gt-lang-tab active">
+                    <span>English</span>
+                  </div>
+                  <div class="gt-header-tools">
+                    <button id="paste-source-btn" class="gt-tool-btn" title="Paste text from clipboard">Paste</button>
+                    <button id="clear-source-btn" class="gt-tool-btn" title="Clear text">Clear (✕)</button>
+                  </div>
                 </div>
-                <textarea id="translator-source-input" placeholder="Type or paste English text here... (e.g. Hello, welcome to private browsing!)" rows="6"></textarea>
-                <div class="box-footer">
-                  <span id="source-char-count">0 characters</span>
-                  <button id="execute-translate-btn" class="btn btn-primary">Translate to বাংলা</button>
+                <div class="gt-panel-body">
+                  <textarea id="translator-source-input" placeholder="Enter English text to translate..." rows="8"></textarea>
+                </div>
+                <div class="gt-panel-footer">
+                  <span id="source-char-count" class="gt-char-count">0 / 5,000</span>
+                  <div class="gt-footer-action-row">
+                    <span class="gt-shortcut-hint">Ctrl + Enter to translate</span>
+                    <button id="execute-translate-btn" class="btn btn-gt-primary">
+                      <span>Translate</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div class="translate-box">
-                <div class="box-header">
-                  <span>বাংলা (Bengali Translation)</span>
-                  <button id="copy-result-btn" class="btn-text">Copy</button>
+              <!-- Right: Bengali Panel -->
+              <div class="gt-panel gt-panel-target">
+                <div class="gt-panel-header">
+                  <div class="gt-lang-tab active">
+                    <span class="gt-lang-bengali">বাংলা (Bengali)</span>
+                  </div>
+                  <div class="gt-header-tools">
+                    <span id="output-engine-tag" class="gt-engine-tag">Engine: Structured NMT</span>
+                  </div>
                 </div>
-                <div class="translation-output-box" id="translator-output-text">
-                  <span class="output-placeholder">Bangla translation will appear here...</span>
+                <div class="gt-panel-body">
+                  <div class="gt-output-container" id="translator-output-text">
+                    <span class="gt-placeholder">অনুবাদ এখানে প্রদর্শিত হবে (Translation will appear here)...</span>
+                  </div>
                 </div>
-                <div class="box-footer">
-                  <span id="output-engine-tag" class="engine-tag">Engine: Lexicon</span>
+                <div class="gt-panel-footer">
+                  <div class="gt-target-actions">
+                    <button id="copy-result-btn" class="btn btn-gt-action" title="Copy translation to clipboard">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                      <span>Copy</span>
+                    </button>
+                    <button id="select-output-btn" class="btn btn-gt-action" title="Select entire translated text">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                      <span>Select All</span>
+                    </button>
+                    <button id="retry-translate-btn" class="btn btn-gt-action" title="Retry translation">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                      <span>Retry</span>
+                    </button>
+                  </div>
+                  <span class="gt-privacy-pill">100% Local Inference</span>
                 </div>
               </div>
             </div>
@@ -484,6 +530,7 @@
   <!-- Dashboard JavaScript Modules -->
   <script src="../translator/text-chunker.js"></script>
   <script src="../translator/lexicon.js"></script>
+  <script src="../core/translation-engine.js"></script>
   <script src="../translator/lib/transformers.min.js"></script>
   <script src="../translator/model-loader.js"></script>
   <script src="pages/overview.js"></script>

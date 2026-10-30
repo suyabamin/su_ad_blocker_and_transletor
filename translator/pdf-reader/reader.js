@@ -203,18 +203,47 @@
     sidebar.classList.toggle('collapsed');
   });
 
-  // Text selection in PDF text layer
-  document.addEventListener('mouseup', () => {
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) return;
+  // Floating translation popup instance
+  let floatingPopup = null;
+  if (typeof SuTranslateFloatingPopup !== 'undefined') {
+    floatingPopup = new SuTranslateFloatingPopup();
+  }
 
-    const text = selection.toString().trim();
-    if (text && /[a-zA-Z]/.test(text)) {
-      sidebarSourceText.value = text;
-      // Auto-open sidebar if closed
-      sidebar.classList.remove('collapsed');
-      // Automatically trigger translation for seamless reading experience
-      executeSidebarTranslation(text);
+  // Text selection in PDF text layer
+  document.addEventListener('mouseup', (e) => {
+    // If click inside floating popup host, ignore
+    const host = document.getElementById('su-adblock-translate-host');
+    if (host && host.contains(e.target)) return;
+
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+        return;
+      }
+
+      const text = selection.toString().trim();
+      if (text && /[a-zA-Z]/.test(text)) {
+        if (sidebarSourceText) sidebarSourceText.value = text;
+
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        if (rect.width > 0 && rect.height > 0 && floatingPopup) {
+          floatingPopup.showPill(rect, text);
+        }
+      }
+    }, 20);
+  });
+
+  // Dismiss on clicking outside
+  document.addEventListener('mousedown', (e) => {
+    const host = document.getElementById('su-adblock-translate-host');
+    if (host && host.contains(e.target)) return;
+    if (floatingPopup) floatingPopup.removeUI();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (floatingPopup) floatingPopup.removeUI();
     }
   });
 

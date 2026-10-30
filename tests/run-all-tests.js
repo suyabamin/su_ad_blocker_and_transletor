@@ -9,6 +9,7 @@ const { runTest: testFilterValidator } = require('./filter-validator.test');
 const { runTest: testWhitelist } = require('./whitelist-custom-rules.test');
 const { runTest: testChunker } = require('./text-chunker.test');
 const { runTest: testTranslation } = require('./translation.test');
+const { runTest: testTranslationQuality } = require('./translation-quality.test');
 const { runTest: testPrivacy } = require('./privacy-audit.test');
 
 async function main() {
@@ -26,6 +27,7 @@ async function main() {
     { name: 'Whitelist & Custom Rules', fn: testWhitelist },
     { name: 'Text Chunker & Sentence Splitting', fn: testChunker },
     { name: 'Translation & Offline Lexicon', fn: testTranslation },
+    { name: 'Translation Quality Benchmarks (FitRide & NMT)', fn: testTranslationQuality },
     { name: 'Privacy & Security Network Audit', fn: testPrivacy }
   ];
 
