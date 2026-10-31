@@ -8,6 +8,11 @@
 (function (global) {
   'use strict';
 
+  function escapeHtml(str) {
+    if (!str || typeof str !== 'string') return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   // SVG Icons
   const ICONS = {
     translate: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M5 8l6 6"/><path d="M4 14l6-6 2-3"/><path d="M2 5h12"/><path d="M7 2h1"/><path d="M22 22l-5-10-5 10"/><path d="M14 18h6"/></svg>`,
@@ -478,7 +483,7 @@
       targetBox.innerHTML = `
         <div class="su-loading-row">
           <div class="su-spinner"></div>
-          <span>Translating locally...</span>
+          <span>Translating to বাংলা...</span>
         </div>
       `;
 
@@ -488,12 +493,22 @@
           payload: { text }
         }, (res) => {
           if (chrome.runtime.lastError || !res || !res.success) {
-            targetBox.textContent = res && res.error ? res.error : 'Translation unavailable offline.';
+            const errorMsg = res && res.error ? res.error : (chrome.runtime.lastError?.message || 'Translation unavailable.');
+            targetBox.innerHTML = `
+              <div style="font-size:12px;line-height:1.5;color:#c5221f;">
+                ⚠️ <strong>Translation Error:</strong><br>${escapeHtml(errorMsg)}
+              </div>
+            `;
+            if (engineBadge) {
+              engineBadge.textContent = 'Translation Failed';
+              engineBadge.style.color = '#c5221f';
+            }
             return;
           }
+
           this.activeTranslation = res.translation || '';
 
-          // Validate output: ensure we never display English text in the Bengali translation panel
+          // Validate output: ensure we never display untranslated English text in the Bengali translation panel
           const bengaliChars = (this.activeTranslation.match(/[\u0980-\u09FF]/g) || []).length;
           const nonSpaceChars = this.activeTranslation.replace(/\s/g, '').length;
           const isEnglishEcho = (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) || 
@@ -502,12 +517,11 @@
           if (isEnglishEcho) {
             targetBox.innerHTML = `
               <div style="font-size:12px;line-height:1.5;color:#c5221f;">
-                ⚠️ <strong>মডেল প্রয়োজন (Neural Model Required):</strong><br>
-                জটিল ও পূর্ণাঙ্গ বাক্য অনুবাদের জন্য নিউরাল মডেল প্রয়োজন। দয়া করে ড্যাশবোর্ড থেকে মডেল ডাউনলোড করুন (Dashboard → Translator → Download Model)।
+                ⚠️ <strong>Translation failed:</strong> The provider returned untranslated English text.
               </div>
             `;
             if (engineBadge) {
-              engineBadge.textContent = 'Model Download Needed';
+              engineBadge.textContent = 'Untranslated Output';
               engineBadge.style.color = '#c5221f';
             }
             return;

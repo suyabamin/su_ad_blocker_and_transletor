@@ -273,7 +273,7 @@ window.initTranslationPage = function () {
       outputContainer.innerHTML = `
         <div class="gt-loading-state">
           <div class="gt-spinner"></div>
-          <span>Translating with local neural engine...</span>
+          <span>Translating with high-accuracy online engine...</span>
         </div>
       `;
     }
@@ -287,11 +287,13 @@ window.initTranslationPage = function () {
             payload: { text }
           }, (reply) => resolve(reply));
         });
+      } else if (typeof OnlineTranslationService !== 'undefined') {
+        res = await OnlineTranslationService.translate(text);
       } else if (engine) {
         res = await engine.translate(text);
       }
 
-      if (res && res.translation) {
+      if (res && res.success !== false && res.translation) {
         activeTranslation = res.translation;
         if (outputContainer) outputContainer.textContent = activeTranslation;
         if (engineTag && res.engine) {
@@ -302,7 +304,7 @@ window.initTranslationPage = function () {
       }
     } catch (err) {
       if (outputContainer) {
-        outputContainer.textContent = `Translation error: ${err.message}`;
+        outputContainer.innerHTML = `<span style="color:#d93025; font-weight:500;">Translation error: ${err.message}</span>`;
       }
     }
   }

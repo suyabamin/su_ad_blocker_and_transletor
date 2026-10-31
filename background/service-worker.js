@@ -17,6 +17,7 @@ try {
     '../core/filter-update-manager.js',
     '../translator/text-chunker.js',
     '../translator/lexicon.js',
+    '../core/online-translation-service.js',
     '../core/translation-engine.js',
     '../core/translation-manager.js',
     'message-router.js',
@@ -200,7 +201,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  // Special handling for TRANSLATE_TEXT — route to offscreen document for real neural translation
+  // Special handling for TRANSLATE_TEXT — route via TranslationManager with Online Translation Service
   if (message && message.action === 'TRANSLATE_TEXT') {
     const text = message.payload && message.payload.text;
     if (!text) {
@@ -208,31 +209,9 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return false;
     }
 
-    translateViaOffscreen(text).then((offscreenResult) => {
-      if (offscreenResult && offscreenResult.success) {
-        // Real neural translation succeeded
-        sendResponse({
-          success: true,
-          original: text,
-          translation: offscreenResult.translation,
-          engine: offscreenResult.engine || 'Neural Model · NLLB-200',
-          cached: false
-        });
-      } else if (offscreenResult && offscreenResult.needsDownload) {
-        // Model not downloaded yet — use structured fallback honestly
-        const fallback = messageRouter.handleMessage(message, sender);
-        fallback.then(r => sendResponse(r)).catch(e => sendResponse({ success: false, error: e.message }));
-      } else {
-        // Offscreen error — fall back to structured engine
-        const fallback = messageRouter.handleMessage(message, sender);
-        fallback.then(r => sendResponse(r)).catch(e => sendResponse({ success: false, error: e.message }));
-      }
-    }).catch((err) => {
-      // Fall back to structured engine on any error
-      messageRouter.handleMessage(message, sender)
-        .then(r => sendResponse(r))
-        .catch(e => sendResponse({ success: false, error: e.message }));
-    });
+    messageRouter.handleMessage(message, sender)
+      .then((res) => sendResponse(res))
+      .catch((err) => sendResponse({ success: false, error: err.message || 'Translation failed' }));
 
     return true; // Keep channel open for async response
   }

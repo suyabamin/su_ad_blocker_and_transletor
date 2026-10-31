@@ -248,12 +248,12 @@
   });
 
   /**
-   * Executes translation via extension message or fallback lexicon.
+   * Executes translation via extension message using the shared online translation service.
    */
   function executeSidebarTranslation(text) {
     if (!text || !text.trim()) return;
 
-    sidebarResultText.innerHTML = '<span class="placeholder-text">Translating locally...</span>';
+    sidebarResultText.innerHTML = '<span class="placeholder-text">Translating to বাংলা...</span>';
 
     if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       chrome.runtime.sendMessage({
@@ -261,20 +261,14 @@
         payload: { text }
       }, (res) => {
         if (chrome.runtime.lastError || !res || !res.success) {
-          // Fallback to local bundled lexicon
-          if (typeof LexiconTranslator !== 'undefined') {
-            const fallback = LexiconTranslator.translate(text);
-            sidebarResultText.textContent = fallback;
-          } else {
-            sidebarResultText.textContent = 'Translation failed offline.';
-          }
+          const err = res && res.error ? res.error : (chrome.runtime.lastError?.message || 'Translation failed.');
+          sidebarResultText.innerHTML = `<span style="color:#d93025;">⚠️ ${err}</span>`;
           return;
         }
         sidebarResultText.textContent = res.translation;
       });
-    } else if (typeof LexiconTranslator !== 'undefined') {
-      const fallback = LexiconTranslator.translate(text);
-      sidebarResultText.textContent = fallback;
+    } else {
+      sidebarResultText.innerHTML = '<span style="color:#d93025;">Extension runtime unavailable.</span>';
     }
   }
 

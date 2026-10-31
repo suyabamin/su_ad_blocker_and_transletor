@@ -141,6 +141,20 @@ class MessageRouter {
           return { success: true };
         }
 
+        case 'GET_COSMETIC_SELECTORS': {
+          try {
+            const url = chrome.runtime.getURL('cosmetic/selectors.json');
+            const res = await fetch(url);
+            if (!res.ok) {
+              return { success: false, error: `Failed to load selectors: HTTP ${res.status}` };
+            }
+            const data = await res.json();
+            return { success: true, data };
+          } catch (err) {
+            return { success: false, error: err.message };
+          }
+        }
+
         case 'TRANSLATE_TEXT': {
           if (!payload || !payload.text) {
             return { success: false, error: 'Text to translate is missing' };

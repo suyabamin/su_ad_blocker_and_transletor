@@ -46,45 +46,97 @@
   }
 
   /**
-   * Loads cosmetic selectors from selectors.json and applies them safely.
+   * Loads cosmetic selectors safely via background message and applies them.
    */
   function loadAndApplySelectors() {
-    const selectorsUrl = chrome.runtime.getURL('cosmetic/selectors.json');
-    fetch(selectorsUrl)
-      .then(res => res.json())
-      .then(data => {
-        const selectorsToApply = [];
+    if (typeof chrome === 'undefined' || !chrome.runtime || !chrome.runtime.sendMessage) {
+      console.warn('Su_AdBlock: chrome.runtime is unavailable in cosmetic content script.');
+      return;
+    }
 
-        // Global selectors
-        if (Array.isArray(data.global)) {
-          selectorsToApply.push(...data.global);
+    console.log('Su_AdBlock: Requesting cosmetic selectors from extension background...');
+
+    chrome.runtime.sendMessage({ action: 'GET_COSMETIC_SELECTORS' }, (response) => {
+      if (chrome.runtime.lastError) {
+        console.warn('Su_AdBlock: Background message error while fetching selectors:', chrome.runtime.lastError.message);
+        return;
+      }
+
+      if (!response || !response.success || !response.data) {
+        console.warn('Su_AdBlock: Received invalid selectors response from background:', response?.error || 'Empty response');
+        return;
+      }
+
+      const data = response.data;
+      console.log('Su_AdBlock: Selector resource loading completed. Processing rules...');
+
+      const validSelectors = [];
+      let invalidCount = 0;
+
+      // Validate and extract global selectors
+      if (Array.isArray(data.global)) {
+        for (const sel of data.global) {
+          if (typeof sel === 'string' && isValidCssSelector(sel)) {
+            validSelectors.push(sel);
+          } else {
+            invalidCount++;
+          }
         }
+      }
 
-        // Domain-specific selectors
-        if (data.domains) {
-          for (const [domain, selectors] of Object.entries(data.domains)) {
-            if (currentHostname === domain || currentHostname.endsWith('.' + domain)) {
-              if (Array.isArray(selectors)) {
-                selectorsToApply.push(...selectors);
+      // Validate and extract domain-specific selectors
+      if (data.domains && typeof data.domains === 'object') {
+        for (const [domain, selectors] of Object.entries(data.domains)) {
+          if (typeof domain === 'string' && (currentHostname === domain.toLowerCase() || currentHostname.endsWith('.' + domain.toLowerCase()))) {
+            if (Array.isArray(selectors)) {
+              for (const sel of selectors) {
+                if (typeof sel === 'string' && isValidCssSelector(sel)) {
+                  validSelectors.push(sel);
+                } else {
+                  invalidCount++;
+                }
               }
             }
           }
         }
+      }
 
-        if (selectorsToApply.length === 0) return;
+      console.log(`Su_AdBlock: Diagnostic - Valid selectors: ${validSelectors.length}, Invalid ignored: ${invalidCount}`);
 
-        // Inject combined stylesheet
-        injectCosmeticStyle(selectorsToApply);
+      if (validSelectors.length === 0) {
+        console.log('Su_AdBlock: No cosmetic selectors applicable to this page.');
+        return;
+      }
 
-        // Run initial scan
-        hideMatchingElements(selectorsToApply);
+      // Deduplicate selectors to prevent redundant DOM rules
+      const uniqueSelectors = Array.from(new Set(validSelectors));
 
-        // Setup restrained MutationObserver
-        setupObserver(selectorsToApply);
-      })
-      .catch(err => {
-        console.warn('Su_AdBlock: Failed to load cosmetic selectors:', err);
-      });
+      // Inject combined stylesheet
+      injectCosmeticStyle(uniqueSelectors);
+
+      // Run initial scan
+      hideMatchingElements(uniqueSelectors);
+
+      // Setup restrained MutationObserver
+      setupObserver(uniqueSelectors);
+
+      console.log(`Su_AdBlock: Cosmetic selector application completed for ${currentHostname}`);
+    });
+  }
+
+  /**
+   * Safely checks if a string is a valid CSS selector without throwing exceptions.
+   * @param {string} selector 
+   * @returns {boolean}
+   */
+  function isValidCssSelector(selector) {
+    if (!selector || typeof selector !== 'string' || !selector.trim()) return false;
+    try {
+      document.createDocumentFragment().querySelector(selector);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
@@ -117,27 +169,29 @@
    * Scans document for matching elements and tallies counts.
    */
   function hideMatchingElements(selectors) {
+    if (!selectors || selectors.length === 0) return;
     let count = 0;
-    const combinedSelector = selectors.join(',');
 
-    try {
-      const elements = document.querySelectorAll(combinedSelector);
-      for (const el of elements) {
-        if (!el.classList.contains('su-adblock-hidden')) {
-          el.classList.add('su-adblock-hidden');
-          count++;
+    for (const sel of selectors) {
+      try {
+        const elements = document.querySelectorAll(sel);
+        for (const el of elements) {
+          if (!el.classList.contains('su-adblock-hidden')) {
+            el.classList.add('su-adblock-hidden');
+            count++;
+          }
         }
+      } catch {
+        // Individual selector error will not break other selectors
       }
-    } catch {
-      // In case of selector syntax issues
     }
 
-    if (count > 0) {
+    if (count > 0 && typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
       hiddenElementsCount += count;
       chrome.runtime.sendMessage({
         action: 'RECORD_ELEMENTS_HIDDEN',
         payload: { count }
-      });
+      }).catch(() => {});
     }
   }
 

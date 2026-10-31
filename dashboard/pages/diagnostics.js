@@ -186,20 +186,22 @@ window.initDiagnosticsPage = function () {
     });
   }
 
-  // Show current model status
+  // Show current provider status
   async function updateModelStatus() {
     if (!modelStatusEl) return;
     return new Promise((resolve) => {
-      chrome.runtime.sendMessage({ action: 'GET_TRANSLATION_MODEL_STATUS' }, (res) => {
-        if (res && res.success && res.state) {
-          const s = res.state;
-          const statusText = s.status === 'MODEL_READY'
-            ? `✅ Neural Model Ready (${(s.device || 'wasm').toUpperCase()})`
-            : s.status === 'DOWNLOADING'
-              ? `⏳ Downloading model (${s.progress || 0}%)...`
-              : s.status === 'NOT_DOWNLOADED'
-                ? '⚠️ Neural model not downloaded. Using Structured NMT Engine (fallback).'
-                : `ℹ️ ${s.status}`;
+      chrome.runtime.sendMessage({ action: 'GET_SETTINGS' }, (res) => {
+        if (res && res.success && res.settings) {
+          const s = res.settings;
+          const provider = s.translationProvider || 'google_cloud';
+          let statusText = '';
+          if (provider === 'google_cloud') {
+            statusText = s.googleApiKey ? '✅ Google Cloud Translation API (Configured)' : '⚠️ Google Cloud Translation API (API Key required in Settings)';
+          } else if (provider === 'libretranslate') {
+            statusText = `🌐 LibreTranslate Endpoint: ${s.libreTranslateEndpoint || 'https://libretranslate.com'}`;
+          } else {
+            statusText = '⚡ Google Translation Engine (Online · Active & Ready)';
+          }
           modelStatusEl.textContent = statusText;
         }
         resolve();
