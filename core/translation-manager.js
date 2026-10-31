@@ -17,6 +17,7 @@ class TranslationManager {
       : (typeof require !== 'undefined' ? require('./translation-engine').TranslationEngine : null);
 
     this.engine = engine || (EngineClass ? new EngineClass({ settingsStore }) : null);
+    this._cache = new Map();
   }
 
   async translate(text) {
@@ -25,6 +26,18 @@ class TranslationManager {
     }
 
     const trimmed = text.trim();
+
+    // Check memory cache first
+    if (this._cache.has(trimmed)) {
+      const cached = this._cache.get(trimmed);
+      return {
+        original: trimmed,
+        translation: cached.translation,
+        engine: cached.engine,
+        provider: cached.provider,
+        cached: true
+      };
+    }
 
     // 1. Get user configuration
     let settings = {};
@@ -60,6 +73,17 @@ class TranslationManager {
           // Record history if enabled
           if (this.engine && typeof this.engine._recordHistory === 'function') {
             await this.engine._recordHistory(trimmed, result.translation, result.engine);
+          }
+
+          // Cache in-memory
+          this._cache.set(trimmed, {
+            translation: result.translation,
+            engine: result.engine,
+            provider: result.provider
+          });
+          if (this._cache.size > 500) {
+            const oldestKey = this._cache.keys().next().value;
+            this._cache.delete(oldestKey);
           }
 
           return {

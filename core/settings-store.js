@@ -15,7 +15,7 @@ const DEFAULT_SETTINGS = {
   filterUpdateIntervalHours: 48,
   deviceType: 'auto',
   theme: 'dark-emerald',
-  translationProvider: 'google_cloud', // 'google_cloud' | 'google_free' | 'libretranslate'
+  translationProvider: 'google_free', // 'google_cloud' | 'google_free' | 'libretranslate'
   googleApiKey: '',
   libreTranslateEndpoint: 'https://libretranslate.com',
   libreTranslateApiKey: '',

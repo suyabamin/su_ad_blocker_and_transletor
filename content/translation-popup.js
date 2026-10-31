@@ -412,7 +412,7 @@
           <div class="su-target-box su-text-box" id="su-target-content">
             <div class="su-loading-row">
               <div class="su-spinner"></div>
-              <span>Translating locally...</span>
+              <span>Translating to বাংলা...</span>
             </div>
           </div>
         </div>
@@ -422,7 +422,7 @@
             <button class="su-action-btn primary" id="su-copy-btn">${ICONS.copy} <span>Copy</span></button>
             <button class="su-action-btn" id="su-retry-btn">${ICONS.retry} <span>Retry</span></button>
           </div>
-          <span class="su-footer-info">Private & Offline</span>
+          <span class="su-footer-info">Online · Text sent to Google</span>
         </div>
       `;
 

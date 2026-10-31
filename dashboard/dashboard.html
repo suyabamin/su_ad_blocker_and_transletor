@@ -5,27 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Su_AdBlock Control Dashboard</title>
   <link rel="stylesheet" href="dashboard.css">
-  <script>
-    // Global error guard: intercept unhandled promise rejections from ONNX/Webpack
-    // so they NEVER leak raw bundled code into the page or console as an error.
-    window.addEventListener('unhandledrejection', function(event) {
-      const reason = event.reason;
-      const msg = (reason && reason.message) ? String(reason.message) : String(reason);
-      // Suppress ONNX / webpack / wasm internal failures silently
-      if (
-        msg.includes('__webpack') ||
-        msg.includes('ort-wasm') ||
-        msg.includes('SharedArrayBuffer') ||
-        msg.includes('no available backend') ||
-        msg.includes('wasm streaming compile') ||
-        msg.includes('WebAssembly') ||
-        msg.length > 500
-      ) {
-        event.preventDefault(); // stop Chrome from logging the massive dump
-        console.warn('[Su_AdBlock] ONNX/WASM init note (suppressed):', msg.slice(0, 150));
-      }
-    });
-  </script>
+  <script src="error-guard.js"></script>
 </head>
 <body>
   <div class="dashboard-layout">

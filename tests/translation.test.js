@@ -31,7 +31,7 @@ async function runTest() {
 
   const res = await tm.translate('Welcome to private web browsing');
   assert(res.translation.length > 0, 'Must produce translated output');
-  assert(res.engine && (res.engine.includes('NMT') || res.engine.includes('lexicon')), 'Must return recognized engine name');
+  assert(res.engine && (res.engine.includes('NMT') || res.engine.includes('lexicon') || res.engine.includes('Translation') || res.engine.includes('Google')), 'Must return recognized engine name');
   assert.strictEqual(res.cached, false);
 
   // Test 5: Cache hit
