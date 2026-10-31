@@ -75,6 +75,21 @@ document.addEventListener('DOMContentLoaded', async () => {
             siteAllowBtn.disabled = true;
             return resolve('');
           }
+
+          // Detect file:// access and show helpful notice if needed
+          if (urlObj.protocol === 'file:') {
+            siteDomainText.textContent = 'Local file';
+            siteAllowBtn.disabled = true;
+            // Check whether extension has file access granted
+            chrome.extension.isAllowedFileSchemeAccess((allowed) => {
+              if (!allowed) {
+                const noticeEl = document.getElementById('file-access-notice');
+                if (noticeEl) noticeEl.style.display = 'flex';
+              }
+            });
+            return resolve('');
+          }
+
           currentDomain = urlObj.hostname;
           siteDomainText.textContent = currentDomain;
           siteAllowBtn.disabled = false;

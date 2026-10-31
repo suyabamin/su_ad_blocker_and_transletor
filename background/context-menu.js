@@ -66,10 +66,13 @@ class ContextMenuHandler {
       tab.url.startsWith('edge://') ||
       tab.url.startsWith('chrome-extension://');
 
-    // Chrome built-in PDF viewer: Chrome renders native PDFium out-of-process where HTML floating popups cannot overlay
+    // Chrome built-in PDF viewer: Chrome renders native PDFium out-of-process.
+    // Content scripts cannot inject into chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/* (the PDF viewer).
+    // file:// .pdf files also use the built-in PDF viewer when opened directly — no injection possible.
+    // Non-PDF file:// pages (HTML, TXT, etc.) work fine with file:// content scripts.
     const isBuiltInPdfTab = tab && tab.url && (
-      /\.pdf($|\?)/i.test(tab.url) ||
-      (tab.url.startsWith('file://') && tab.url.toLowerCase().endsWith('.pdf'))
+      /\.pdf($|\?)/i.test(tab.url) &&
+      (tab.url.startsWith('file://') || tab.url.startsWith('chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai'))
     );
 
     if (isRestrictedUrl || isBuiltInPdfTab) {

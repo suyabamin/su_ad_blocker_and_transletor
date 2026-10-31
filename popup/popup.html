@@ -62,6 +62,15 @@
       </div>
     </section>
 
+    <!-- File Access Notice (hidden by default, shown only on file:// pages without permission) -->
+    <div id="file-access-notice" class="file-notice" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <div class="file-notice-text">
+        <strong>Enable file access for local PDFs</strong><br>
+        Go to <code>chrome://extensions</code> → Su_AdBlock → <em>Allow access to file URLs</em>
+      </div>
+    </div>
+
     <!-- Quick Shortcuts / Features -->
     <section class="features-list">
       <button class="feature-item" id="open-pdf-btn">
@@ -70,7 +79,7 @@
         </div>
         <div class="feature-desc">
           <span class="feature-title">Local PDF Reader</span>
-          <span class="feature-sub">Read & translate PDFs privately</span>
+          <span class="feature-sub">Read &amp; translate PDFs privately</span>
         </div>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="chevron"><polyline points="9 18 15 12 9 6"/></svg>
       </button>

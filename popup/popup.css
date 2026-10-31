@@ -361,3 +361,31 @@ input:checked + .slider:before {
   font-size: 11px;
   color: var(--text-muted);
 }
+
+/* File Access Notice */
+.file-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 12px 8px;
+  padding: 8px 10px;
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 8px;
+  font-size: 11px;
+  color: #5f4c00;
+  line-height: 1.45;
+}
+
+.file-notice svg {
+  flex-shrink: 0;
+  color: #f9a825;
+  margin-top: 1px;
+}
+
+.file-notice code {
+  font-family: monospace;
+  background: rgba(0,0,0,0.06);
+  padding: 1px 4px;
+  border-radius: 3px;
+}

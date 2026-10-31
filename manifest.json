@@ -37,7 +37,8 @@
     "offscreen"
   ],
   "host_permissions": [
-    "*://*/*"
+    "*://*/*",
+    "file:///*"
   ],
   "content_scripts": [
     {
@@ -53,6 +54,19 @@
         "content/translation-popup.js",
         "content/selection.js",
         "content/cosmetic.js"
+      ],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "file:///*"
+      ],
+      "css": [
+        "content/selection.css"
+      ],
+      "js": [
+        "content/translation-popup.js",
+        "content/selection.js"
       ],
       "run_at": "document_idle"
     }
