@@ -33,7 +33,8 @@
     "declarativeNetRequestFeedback",
     "contextMenus",
     "activeTab",
-    "scripting"
+    "scripting",
+    "offscreen"
   ],
   "host_permissions": [
     "*://*/*"
@@ -97,7 +98,9 @@
         "content/selection.css",
         "content/translation-popup.js",
         "translator/pdf-reader/*",
-        "translator/lib/*"
+        "translator/lib/*",
+        "background/offscreen.html",
+        "background/offscreen.js"
       ],
       "matches": [
         "<all_urls>"

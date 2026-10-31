@@ -492,9 +492,31 @@
             return;
           }
           this.activeTranslation = res.translation || '';
+
+          // Validate output: ensure we never display English text in the Bengali translation panel
+          const bengaliChars = (this.activeTranslation.match(/[\u0980-\u09FF]/g) || []).length;
+          const nonSpaceChars = this.activeTranslation.replace(/\s/g, '').length;
+          const isEnglishEcho = (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) || 
+                                (this.activeTranslation.trim().toLowerCase() === text.trim().toLowerCase());
+
+          if (isEnglishEcho) {
+            targetBox.innerHTML = `
+              <div style="font-size:12px;line-height:1.5;color:#c5221f;">
+                ⚠️ <strong>মডেল প্রয়োজন (Neural Model Required):</strong><br>
+                জটিল ও পূর্ণাঙ্গ বাক্য অনুবাদের জন্য নিউরাল মডেল প্রয়োজন। দয়া করে ড্যাশবোর্ড থেকে মডেল ডাউনলোড করুন (Dashboard → Translator → Download Model)।
+              </div>
+            `;
+            if (engineBadge) {
+              engineBadge.textContent = 'Model Download Needed';
+              engineBadge.style.color = '#c5221f';
+            }
+            return;
+          }
+
           targetBox.textContent = this.activeTranslation;
           if (engineBadge && res.engine) {
             engineBadge.textContent = res.engine;
+            engineBadge.style.color = '';
           }
         });
       } else {
@@ -503,8 +525,15 @@
           const engine = new TranslationEngine();
           engine.translate(text).then(res => {
             this.activeTranslation = res.translation;
-            targetBox.textContent = res.translation;
-            if (engineBadge) engineBadge.textContent = res.engine;
+            const bengaliChars = (this.activeTranslation.match(/[\u0980-\u09FF]/g) || []).length;
+            const nonSpaceChars = this.activeTranslation.replace(/\s/g, '').length;
+            if (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) {
+              targetBox.innerHTML = `<span style="color:#c5221f;">অনুবাদ করার জন্য নিউরাল মডেল ডাউনলোড প্রয়োজন।</span>`;
+              if (engineBadge) engineBadge.textContent = 'Model Download Needed';
+            } else {
+              targetBox.textContent = res.translation;
+              if (engineBadge) engineBadge.textContent = res.engine;
+            }
           });
         }
       }

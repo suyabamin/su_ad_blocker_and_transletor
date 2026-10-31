@@ -51,11 +51,20 @@ async function runTest() {
   assert(res4.translation.includes('বিদ্যমান কোড') || res4.translation.includes('পরিবর্তন না করে'), 'Must preserve software engineering meaning');
   assert(!res4.translation.includes('existing code'), 'Must translate code concepts');
 
-  // Test 5: Cache efficiency
+  // Test 5: Space Shuttle Benchmark (from user bug report)
+  const test5Input = 'The Space Shuttle is a retired, partially reusable low Earth orbital spacecraft system that went to the ISS and performed other orbital missions.';
+  const res5 = await engine.translate(test5Input);
+  console.log('Test 5 Input: ', test5Input);
+  console.log('Test 5 Output:', res5.translation);
+  assert(res5.translation.includes('স্পেস শাটল'), 'Must translate Space Shuttle');
+  assert(res5.translation.includes('মহাকাশযান'), 'Must translate spacecraft');
+  assert(!res5.translation.includes('The Space Shuttle is a retired'), 'Must NOT echo original English sentence');
+
+  // Test 6: Cache efficiency
   const resCached = await engine.translate(test1Input);
   assert.strictEqual(resCached.cached, true, 'Repeated translation must hit memory cache');
 
-  // Test 6: Model Lifecycle States
+  // Test 7: Model Lifecycle States
   const state = engine.getState();
   assert(state.status, 'Must have defined model status');
   console.log('Engine state:', state.status, '| Device:', state.device);

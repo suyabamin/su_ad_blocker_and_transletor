@@ -6,6 +6,7 @@
 
 // Import Core and Background modules
 try {
+
   importScripts(
     '../core/settings-store.js',
     '../core/filter-validator.js',
@@ -60,6 +61,75 @@ const messageRouter = new MessageRouter({
   translationManager
 });
 
+// ─── Offscreen Document Manager ─────────────────────────────────────────────
+
+const OFFSCREEN_URL = chrome.runtime.getURL('background/offscreen.html');
+let offscreenCreating = false;
+
+async function ensureOffscreenDocument() {
+  // Check if offscreen document already exists
+  const existingContexts = await chrome.runtime.getContexts({
+    contextTypes: ['OFFSCREEN_DOCUMENT'],
+    documentUrls: [OFFSCREEN_URL]
+  }).catch(() => []);
+
+  if (existingContexts && existingContexts.length > 0) {
+    return true; // Already exists
+  }
+
+  if (offscreenCreating) {
+    // Wait for creation to complete
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    return true;
+  }
+
+  offscreenCreating = true;
+  try {
+    await chrome.offscreen.createDocument({
+      url: OFFSCREEN_URL,
+      reasons: ['WORKERS'],
+      justification: 'Run Transformers.js neural translation (ONNX WASM requires offscreen context in MV3)'
+    });
+    offscreenCreating = false;
+    return true;
+  } catch (err) {
+    offscreenCreating = false;
+    console.error('Failed to create offscreen document:', err.message);
+    return false;
+  }
+}
+
+async function translateViaOffscreen(text) {
+  const created = await ensureOffscreenDocument();
+  if (!created) {
+    return { success: false, error: 'Could not create translation worker.' };
+  }
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      resolve({ success: false, error: 'Translation timed out (60s). Model may still be downloading.' });
+    }, 60000);
+
+    chrome.runtime.sendMessage({
+      action: 'OFFSCREEN_TRANSLATE',
+      text
+    }, (response) => {
+      clearTimeout(timeout);
+      if (chrome.runtime.lastError) {
+        resolve({ success: false, error: chrome.runtime.lastError.message });
+      } else {
+        resolve(response || { success: false, error: 'No response from translation worker.' });
+      }
+    });
+  });
+}
+
+// Listen for model download triggering from dashboard
+async function triggerModelDownload() {
+  await ensureOffscreenDocument();
+  chrome.runtime.sendMessage({ action: 'OFFSCREEN_LOAD_MODEL' }).catch(() => {});
+}
+
 /**
  * Initializes state, storage, and rules.
  */
@@ -108,11 +178,85 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 
 // Unified message router
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  // Forward model progress updates from offscreen to any interested parties (dashboard, popup)
+  if (message && message.action === 'MODEL_PROGRESS') {
+    // Re-broadcast to all extension pages
+    chrome.runtime.sendMessage(message).catch(() => {});
+    // Update persisted model state
+    if (message.status) {
+      chrome.storage.local.set({
+        modelState: {
+          status: message.status === 'MODEL_READY' ? 'MODEL_READY' : message.status,
+          device: message.device || 'wasm',
+          progress: message.progress || 0,
+          currentFile: message.currentFile || '',
+          bytesLoaded: message.bytesLoaded || 0,
+          bytesTotal: message.bytesTotal || 0,
+          lastUpdated: new Date().toISOString()
+        }
+      });
+    }
+    sendResponse({ success: true });
+    return false;
+  }
+
+  // Special handling for TRANSLATE_TEXT — route to offscreen document for real neural translation
+  if (message && message.action === 'TRANSLATE_TEXT') {
+    const text = message.payload && message.payload.text;
+    if (!text) {
+      sendResponse({ success: false, error: 'No text provided.' });
+      return false;
+    }
+
+    translateViaOffscreen(text).then((offscreenResult) => {
+      if (offscreenResult && offscreenResult.success) {
+        // Real neural translation succeeded
+        sendResponse({
+          success: true,
+          original: text,
+          translation: offscreenResult.translation,
+          engine: offscreenResult.engine || 'Neural Model · NLLB-200',
+          cached: false
+        });
+      } else if (offscreenResult && offscreenResult.needsDownload) {
+        // Model not downloaded yet — use structured fallback honestly
+        const fallback = messageRouter.handleMessage(message, sender);
+        fallback.then(r => sendResponse(r)).catch(e => sendResponse({ success: false, error: e.message }));
+      } else {
+        // Offscreen error — fall back to structured engine
+        const fallback = messageRouter.handleMessage(message, sender);
+        fallback.then(r => sendResponse(r)).catch(e => sendResponse({ success: false, error: e.message }));
+      }
+    }).catch((err) => {
+      // Fall back to structured engine on any error
+      messageRouter.handleMessage(message, sender)
+        .then(r => sendResponse(r))
+        .catch(e => sendResponse({ success: false, error: e.message }));
+    });
+
+    return true; // Keep channel open for async response
+  }
+
+  // Special handling: LOAD_NEURAL_MODEL → trigger offscreen model download
+  if (message && message.action === 'LOAD_NEURAL_MODEL') {
+    ensureOffscreenDocument().then((created) => {
+      if (!created) {
+        sendResponse({ success: false, error: 'Could not create translation worker.' });
+        return;
+      }
+      chrome.runtime.sendMessage({ action: 'OFFSCREEN_LOAD_MODEL' }, (resp) => {
+        sendResponse(resp || { success: false, error: 'No response from worker' });
+      });
+    });
+    return true;
+  }
+
+  // All other messages go through the regular router
   messageRouter.handleMessage(message, sender)
     .then((result) => sendResponse(result))
     .catch((err) => sendResponse({ success: false, error: err.message }));
 
-  return true; // Keep message channel open for asynchronous reply
+  return true;
 });
 
 // Self-initialize on worker wake-up

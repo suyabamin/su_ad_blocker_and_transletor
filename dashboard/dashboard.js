@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     'section-statistics': 'Blocking Statistics',
     'section-translation': 'English → বাংলা Translator',
     'section-history': 'Translation History',
+    'section-diagnostics': 'Translation Self-Test Diagnostics',
     'section-settings': 'Extension Settings',
     'section-about': 'About Su_AdBlock'
   };
@@ -96,6 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (window.initCustomRulesPage) window.initCustomRulesPage();
   if (window.initTranslationPage) window.initTranslationPage();
   if (window.initHistoryPage) window.initHistoryPage();
+  if (window.initDiagnosticsPage) window.initDiagnosticsPage();
   if (window.initSettingsPage) window.initSettingsPage();
 
   // Initial routing

@@ -83,6 +83,10 @@
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           <span>10. Translation History</span>
         </a>
+        <a href="#diagnostics" class="nav-item" data-target="section-diagnostics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <span>Translation Diagnostics</span>
+        </a>
 
         <div class="nav-category">SYSTEM</div>
         <a href="#settings" class="nav-item" data-target="section-settings">
@@ -480,6 +484,31 @@
           </div>
         </section>
 
+        <!-- TRANSLATION DIAGNOSTICS -->
+        <section id="section-diagnostics" class="dashboard-section">
+          <div class="panel">
+            <div class="panel-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+              <div>
+                <h3>Translation Self-Test Diagnostics</h3>
+                <p>Automated verification suite testing real English-to-Bengali neural translation and offline inference.</p>
+              </div>
+              <div style="display:flex;gap:10px;">
+                <button id="diag-copy-report-btn" class="btn btn-secondary">Copy Report</button>
+                <button id="diag-run-tests-btn" class="btn btn-primary">Run Translation Tests</button>
+              </div>
+            </div>
+
+            <div style="background:#f8f9fa;border:1px solid #e8eaed;border-radius:8px;padding:14px;margin-bottom:20px;">
+              <div style="font-size:13px;font-weight:600;margin-bottom:6px;color:#3c4043;">Engine Status & Device:</div>
+              <div id="diag-model-status" style="font-size:13px;color:#5f6368;">Checking translation engine state...</div>
+            </div>
+
+            <div id="diag-test-results">
+              <p style="color:#5f6368;font-style:italic;">Click "Run Translation Tests" to execute the 7-case benchmark suite and verify Bengali output.</p>
+            </div>
+          </div>
+        </section>
+
         <!-- 11. SETTINGS -->
         <section id="section-settings" class="dashboard-section">
           <div class="panel">
@@ -568,6 +597,7 @@
   <script src="pages/custom-rules.js"></script>
   <script src="pages/translation.js"></script>
   <script src="pages/history.js"></script>
+  <script src="pages/diagnostics.js"></script>
   <script src="pages/settings.js"></script>
   <script src="dashboard.js"></script>
 </body>

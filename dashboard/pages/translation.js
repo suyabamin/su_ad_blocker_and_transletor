@@ -196,18 +196,70 @@ window.initTranslationPage = function () {
     });
   }
 
+  // Listen for broadcast model progress messages from background / offscreen worker
+  if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.onMessage) {
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg && msg.action === 'MODEL_PROGRESS') {
+        if (msg.status === 'DOWNLOADING') {
+          if (modelStatusDot) modelStatusDot.className = 'gt-status-dot downloading';
+          if (modelStatusBadgeText) modelStatusBadgeText.textContent = `Downloading (${msg.progress}%)`;
+          if (modelStatusText) modelStatusText.textContent = `Downloading neural model weights to browser cache...`;
+          if (progressBar) progressBar.style.display = 'block';
+          if (progressFill) progressFill.style.width = `${msg.progress}%`;
+          if (progressMeta) progressMeta.style.display = 'flex';
+          if (fileInfo) fileInfo.textContent = msg.currentFile || 'Downloading model assets...';
+          if (bytesInfo && msg.bytesTotal) {
+            const loadedMb = (msg.bytesLoaded / 1024 / 1024).toFixed(1);
+            const totalMb = (msg.bytesTotal / 1024 / 1024).toFixed(1);
+            bytesInfo.textContent = `${loadedMb} MB / ${totalMb} MB (${msg.progress}%)`;
+          }
+          if (downloadModelBtn) {
+            downloadModelBtn.disabled = true;
+            downloadModelBtn.textContent = 'Downloading...';
+          }
+        } else if (msg.status === 'MODEL_READY') {
+          if (modelStatusDot) modelStatusDot.className = 'gt-status-dot active';
+          if (modelStatusBadgeText) modelStatusBadgeText.textContent = `Neural Model Ready (${(msg.device || 'WASM').toUpperCase()})`;
+          if (modelStatusText) modelStatusText.textContent = `Status: Neural model cached & verified. Device: ${(msg.device || 'WASM').toUpperCase()}. 100% offline neural translation active.`;
+          if (progressBar) progressBar.style.display = 'none';
+          if (progressMeta) progressMeta.style.display = 'none';
+          if (downloadModelBtn) {
+            downloadModelBtn.disabled = true;
+            downloadModelBtn.textContent = 'Model Cached & Ready';
+            downloadModelBtn.classList.add('ready');
+          }
+        }
+      }
+    });
+  }
+
   // Download Neural Model Button Handler
-  if (downloadModelBtn && engine) {
+  if (downloadModelBtn) {
     downloadModelBtn.addEventListener('click', async () => {
-      try {
-        await engine.loadNeuralModel({ preferredDevice: 'auto' });
-      } catch (err) {
-        // Error is already sanitized inside TranslationEngine.loadNeuralModel.
-        // Just log a short note — never display raw error objects in the UI.
-        const safeMsg = (err && err.message && err.message.length < 300)
-          ? err.message
-          : 'Neural model initialization failed. Structured NMT Engine remains active.';
-        console.warn('[translation.js] Neural model note:', safeMsg);
+      downloadModelBtn.disabled = true;
+      downloadModelBtn.textContent = 'Initiating download...';
+      if (progressBar) progressBar.style.display = 'block';
+      if (progressFill) progressFill.style.width = '5%';
+
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+        chrome.runtime.sendMessage({ action: 'LOAD_NEURAL_MODEL' }, (resp) => {
+          if (chrome.runtime.lastError || (resp && !resp.success)) {
+            const err = resp?.error || chrome.runtime.lastError?.message;
+            console.warn('[translation.js] Offscreen model load notice:', err);
+            if (engine) {
+              engine.loadNeuralModel({ preferredDevice: 'auto' }).catch(() => {});
+            }
+          }
+        });
+      } else if (engine) {
+        try {
+          await engine.loadNeuralModel({ preferredDevice: 'auto' });
+        } catch (err) {
+          const safeMsg = (err && err.message && err.message.length < 300)
+            ? err.message
+            : 'Neural model initialization failed. Structured NMT Engine remains active.';
+          console.warn('[translation.js] Neural model note:', safeMsg);
+        }
       }
     });
   }
@@ -228,15 +280,15 @@ window.initTranslationPage = function () {
 
     try {
       let res = null;
-      if (engine) {
-        res = await engine.translate(text);
-      } else if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+      if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
         res = await new Promise((resolve) => {
           chrome.runtime.sendMessage({
             action: 'TRANSLATE_TEXT',
             payload: { text }
           }, (reply) => resolve(reply));
         });
+      } else if (engine) {
+        res = await engine.translate(text);
       }
 
       if (res && res.translation) {
