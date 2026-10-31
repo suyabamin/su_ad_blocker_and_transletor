@@ -603,15 +603,7 @@
   <script src="../translator/text-chunker.js"></script>
   <script src="../translator/lexicon.js"></script>
   <script src="../core/translation-engine.js"></script>
-  <script type="module">
-    try {
-      const mod = await import('../translator/lib/transformers.min.js');
-      window.transformers = mod.default || mod;
-      globalThis.transformers = window.transformers;
-    } catch (e) {
-      console.warn('Initial module load notice for Transformers.js:', e);
-    }
-  </script>
+  <script type="module" src="dashboard-modules.js"></script>
   <script src="../translator/model-loader.js"></script>
   <script src="pages/overview.js"></script>
   <script src="pages/filters.js"></script>

@@ -14,6 +14,10 @@ const { runOnlineTests: testOnlineTranslation } = require('./online-translation.
 const { runRepairTestSuite: testFloatingRepair } = require('./floating-translation-repair.test');
 const { runTest: testPrivacy } = require('./privacy-audit.test');
 
+function testDashboardTranslation() {
+  require('./dashboard-translation.test');
+}
+
 async function main() {
   console.log('====================================================');
   console.log('        Su_AdBlock Extension Test Suite             ');
@@ -32,6 +36,7 @@ async function main() {
     { name: 'Translation Quality Benchmarks (FitRide & NMT)', fn: testTranslationQuality },
     { name: 'Online Translation & API Benchmarks', fn: testOnlineTranslation },
     { name: 'Floating Translation & PDF Integration Repairs', fn: testFloatingRepair },
+    { name: 'Dashboard CSP & Prefill Verification', fn: testDashboardTranslation },
     { name: 'Privacy & Security Network Audit', fn: testPrivacy }
   ];
 

@@ -142,7 +142,6 @@ window.initTranslationPage = function () {
           downloadModelBtn.disabled = false;
           downloadModelBtn.textContent = 'Download Neural Model (Optional)';
         }
-        }
       } else if (st.status === 'DOWNLOADING') {
         if (modelStatusDot) modelStatusDot.className = 'gt-status-dot downloading';
         if (modelStatusBadgeText) modelStatusBadgeText.textContent = `Downloading (${st.progress}%)`;
@@ -314,13 +313,41 @@ window.initTranslationPage = function () {
   }
 
   // Check URL query parameters for passed text (from context menu or other pages)
-  const hash = window.location.hash;
-  if (hash.includes('?text=')) {
-    const raw = hash.split('?text=')[1];
-    if (raw && sourceInput) {
-      sourceInput.value = decodeURIComponent(raw);
-      updateCharCount();
-      setTimeout(executeTranslation, 150);
+  function checkUrlPrefill() {
+    try {
+      const hash = window.location.hash || '';
+      let textToFill = null;
+
+      const qIndex = hash.indexOf('?');
+      if (qIndex !== -1) {
+        const queryStr = hash.substring(qIndex + 1);
+        const params = new URLSearchParams(queryStr);
+        if (params.has('text')) {
+          textToFill = params.get('text');
+        }
+      }
+
+      if (!textToFill && hash.includes('?text=')) {
+        const raw = hash.split('?text=')[1];
+        if (raw) {
+          try {
+            textToFill = decodeURIComponent(raw.replace(/\+/g, ' '));
+          } catch {
+            textToFill = raw;
+          }
+        }
+      }
+
+      if (textToFill && sourceInput) {
+        sourceInput.value = textToFill;
+        updateCharCount();
+        setTimeout(executeTranslation, 150);
+      }
+    } catch (e) {
+      console.warn('URL prefill error in translation page:', e);
     }
   }
+
+  checkUrlPrefill();
+  window.addEventListener('hashchange', checkUrlPrefill);
 };
