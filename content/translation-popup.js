@@ -305,6 +305,9 @@
       this.lastRect = null;
       this.isExpanded = false;
       this.activeTranslation = '';
+      this.state = 'IDLE'; // 'IDLE' | 'VALIDATING' | 'LOADING' | 'SUCCESS' | 'FAILURE' | 'TIMEOUT' | 'CANCELLED'
+      this.activeRequestId = null;
+      this.timeoutTimer = null;
       this._init();
     }
 
@@ -459,7 +462,7 @@
 
       const copyBtn = this.cardEl.querySelector('#su-copy-btn');
       copyBtn.addEventListener('click', () => {
-        if (!this.activeTranslation) return;
+        if (!this.activeTranslation || this.state !== 'SUCCESS') return;
         navigator.clipboard.writeText(this.activeTranslation).then(() => {
           copyBtn.classList.add('copied');
           copyBtn.innerHTML = `${ICONS.check} <span>Copied!</span>`;
@@ -472,84 +475,165 @@
 
       const retryBtn = this.cardEl.querySelector('#su-retry-btn');
       retryBtn.addEventListener('click', () => {
+        if (this.state === 'LOADING') return;
         this._requestTranslation(this.currentSelectionText);
       });
     }
 
-    _requestTranslation(text) {
+    _setState(state, data = {}) {
+      this.state = state;
+      if (!this.cardEl) return;
+
       const targetBox = this.cardEl.querySelector('#su-target-content');
       const engineBadge = this.cardEl.querySelector('#su-engine-badge');
+      const retryBtn = this.cardEl.querySelector('#su-retry-btn');
+      const copyBtn = this.cardEl.querySelector('#su-copy-btn');
 
-      targetBox.innerHTML = `
-        <div class="su-loading-row">
-          <div class="su-spinner"></div>
-          <span>Translating to বাংলা...</span>
-        </div>
-      `;
+      if (state === 'LOADING') {
+        if (retryBtn) retryBtn.disabled = true;
+        if (copyBtn) copyBtn.disabled = true;
+        if (targetBox) {
+          targetBox.innerHTML = `
+            <div class="su-loading-row">
+              <div class="su-spinner"></div>
+              <span>Translating to বাংলা...</span>
+            </div>
+          `;
+        }
+        if (engineBadge) {
+          engineBadge.textContent = 'Translating...';
+          engineBadge.style.color = '';
+        }
+      } else if (state === 'SUCCESS') {
+        if (retryBtn) retryBtn.disabled = false;
+        if (copyBtn) copyBtn.disabled = false;
+        if (targetBox) {
+          targetBox.innerHTML = '';
+          targetBox.textContent = data.translation || '';
+        }
+        if (engineBadge && data.engine) {
+          engineBadge.textContent = data.engine;
+          engineBadge.style.color = '';
+        }
+      } else if (state === 'FAILURE' || state === 'TIMEOUT') {
+        if (retryBtn) retryBtn.disabled = false;
+        if (copyBtn) copyBtn.disabled = true;
+        const errMsg = data.error || (state === 'TIMEOUT' ? 'Request timed out after 30 seconds.' : 'Translation failed.');
+        if (targetBox) {
+          targetBox.innerHTML = `
+            <div style="font-size:12px;line-height:1.5;color:#c5221f;">
+              ⚠️ <strong>${state === 'TIMEOUT' ? 'Request Timeout' : 'Translation Error'}:</strong><br>
+              <span class="su-error-msg"></span>
+            </div>
+          `;
+          const errSpan = targetBox.querySelector('.su-error-msg');
+          if (errSpan) errSpan.textContent = errMsg;
+        }
+        if (engineBadge) {
+          engineBadge.textContent = state === 'TIMEOUT' ? 'Timed Out' : 'Failed';
+          engineBadge.style.color = '#c5221f';
+        }
+      }
+    }
+
+    _requestTranslation(text) {
+      if (!text || typeof text !== 'string' || !text.trim()) {
+        this._setState('FAILURE', { error: 'No text selected to translate.' });
+        return;
+      }
+
+      const trimmed = text.trim();
+      this.currentSelectionText = trimmed;
+      const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
+      this.activeRequestId = requestId;
+
+      // Clean up any pending timer
+      if (this.timeoutTimer) {
+        clearTimeout(this.timeoutTimer);
+        this.timeoutTimer = null;
+      }
+
+      this._setState('LOADING');
+
+      // Maximum 30-Second Request Timeout
+      this.timeoutTimer = setTimeout(() => {
+        if (this.activeRequestId === requestId && this.state === 'LOADING') {
+          console.warn('[Su_AdBlock] Translation request timed out (30s):', requestId);
+          this._setState('TIMEOUT', { error: 'Translation request timed out after 30 seconds. Please check your network connection and click Retry.' });
+        }
+      }, 30000);
+
+      const handleResponse = (res, err) => {
+        if (this.activeRequestId !== requestId || this.state === 'CANCELLED') {
+          // Late response for an older or cancelled request; discard
+          return;
+        }
+
+        if (this.timeoutTimer) {
+          clearTimeout(this.timeoutTimer);
+          this.timeoutTimer = null;
+        }
+
+        if (err || !res || !res.success) {
+          const errorMsg = (res && res.error) || (err && err.message) || (chrome.runtime && chrome.runtime.lastError && chrome.runtime.lastError.message) || 'Translation service unavailable.';
+          this._setState('FAILURE', { error: errorMsg });
+          return;
+        }
+
+        const translation = res.translation || '';
+
+        // Bengali validation guard: Ensure genuine Bengali characters (U+0980–U+09FF) and not English echo
+        const bengaliChars = (translation.match(/[\u0980-\u09FF]/g) || []).length;
+        const nonSpaceChars = translation.replace(/\s/g, '').length;
+        const isEnglishEcho = (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) || 
+                              (translation.trim().toLowerCase() === trimmed.toLowerCase());
+
+        if (isEnglishEcho) {
+          this._setState('FAILURE', { error: 'The translation provider returned untranslated text. Please click Retry.' });
+          return;
+        }
+
+        this.activeTranslation = translation;
+        this._setState('SUCCESS', {
+          translation,
+          engine: res.engine || res.provider || 'Google Translation'
+        });
+      };
 
       if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
-        chrome.runtime.sendMessage({
-          action: 'TRANSLATE_TEXT',
-          payload: { text }
-        }, (res) => {
-          if (chrome.runtime.lastError || !res || !res.success) {
-            const errorMsg = res && res.error ? res.error : (chrome.runtime.lastError?.message || 'Translation unavailable.');
-            targetBox.innerHTML = `
-              <div style="font-size:12px;line-height:1.5;color:#c5221f;">
-                ⚠️ <strong>Translation Error:</strong><br>${escapeHtml(errorMsg)}
-              </div>
-            `;
-            if (engineBadge) {
-              engineBadge.textContent = 'Translation Failed';
-              engineBadge.style.color = '#c5221f';
+        try {
+          chrome.runtime.sendMessage({
+            type: 'SU_TRANSLATE_TEXT',
+            action: 'TRANSLATE_TEXT',
+            requestId,
+            payload: {
+              text: trimmed,
+              sourceLanguage: 'en',
+              targetLanguage: 'bn'
             }
-            return;
-          }
-
-          this.activeTranslation = res.translation || '';
-
-          // Validate output: ensure we never display untranslated English text in the Bengali translation panel
-          const bengaliChars = (this.activeTranslation.match(/[\u0980-\u09FF]/g) || []).length;
-          const nonSpaceChars = this.activeTranslation.replace(/\s/g, '').length;
-          const isEnglishEcho = (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) || 
-                                (this.activeTranslation.trim().toLowerCase() === text.trim().toLowerCase());
-
-          if (isEnglishEcho) {
-            targetBox.innerHTML = `
-              <div style="font-size:12px;line-height:1.5;color:#c5221f;">
-                ⚠️ <strong>Translation failed:</strong> The provider returned untranslated English text.
-              </div>
-            `;
-            if (engineBadge) {
-              engineBadge.textContent = 'Untranslated Output';
-              engineBadge.style.color = '#c5221f';
-            }
-            return;
-          }
-
-          targetBox.textContent = this.activeTranslation;
-          if (engineBadge && res.engine) {
-            engineBadge.textContent = res.engine;
-            engineBadge.style.color = '';
-          }
-        });
-      } else {
-        // Fallback for direct standalone contexts (PDF reader)
-        if (typeof TranslationEngine !== 'undefined') {
-          const engine = new TranslationEngine();
-          engine.translate(text).then(res => {
-            this.activeTranslation = res.translation;
-            const bengaliChars = (this.activeTranslation.match(/[\u0980-\u09FF]/g) || []).length;
-            const nonSpaceChars = this.activeTranslation.replace(/\s/g, '').length;
-            if (nonSpaceChars > 0 && (bengaliChars / nonSpaceChars) < 0.15) {
-              targetBox.innerHTML = `<span style="color:#c5221f;">অনুবাদ করার জন্য নিউরাল মডেল ডাউনলোড প্রয়োজন।</span>`;
-              if (engineBadge) engineBadge.textContent = 'Model Download Needed';
+          }, (res) => {
+            const lastErr = chrome.runtime.lastError;
+            if (lastErr) {
+              handleResponse(null, lastErr);
             } else {
-              targetBox.textContent = res.translation;
-              if (engineBadge) engineBadge.textContent = res.engine;
+              handleResponse(res, null);
             }
           });
+        } catch (syncErr) {
+          const isContextInvalidated = syncErr && syncErr.message && syncErr.message.includes('Extension context invalidated');
+          const errMsg = isContextInvalidated
+            ? 'Extension was reloaded or updated. Please refresh the page to reactivate translation.'
+            : (syncErr.message || 'Failed to send message to extension background.');
+          handleResponse(null, new Error(errMsg));
         }
+      } else if (typeof TranslationEngine !== 'undefined') {
+        // Fallback for direct standalone contexts (PDF reader)
+        const engine = new TranslationEngine();
+        engine.translate(trimmed)
+          .then(res => handleResponse({ success: true, ...res }, null))
+          .catch(err => handleResponse(null, err));
+      } else {
+        handleResponse(null, new Error('Extension runtime communication unavailable.'));
       }
     }
 
@@ -589,6 +673,13 @@
     }
 
     removeUI() {
+      this.state = 'CANCELLED';
+      if (this.timeoutTimer) {
+        clearTimeout(this.timeoutTimer);
+        this.timeoutTimer = null;
+      }
+      this.activeRequestId = null;
+
       if (this.pillEl && this.pillEl.parentNode) {
         this.pillEl.parentNode.removeChild(this.pillEl);
       }

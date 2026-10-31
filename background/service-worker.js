@@ -201,17 +201,25 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return false;
   }
 
-  // Special handling for TRANSLATE_TEXT — route via TranslationManager with Online Translation Service
-  if (message && message.action === 'TRANSLATE_TEXT') {
-    const text = message.payload && message.payload.text;
-    if (!text) {
-      sendResponse({ success: false, error: 'No text provided.' });
+  // Special handling for TRANSLATE_TEXT / SU_TRANSLATE_TEXT — route via TranslationManager with Online Translation Service
+  const action = message && (message.action || message.type);
+  if (action === 'TRANSLATE_TEXT' || action === 'SU_TRANSLATE_TEXT') {
+    const payload = (message && message.payload) || message || {};
+    const text = (payload && payload.text) || (typeof payload === 'string' ? payload : '');
+    const requestId = (message && message.requestId) || (payload && payload.requestId) || ('req_' + Date.now());
+
+    if (!text || typeof text !== 'string' || !text.trim()) {
+      sendResponse({ success: false, requestId, error: 'No text provided.' });
       return false;
     }
 
-    messageRouter.handleMessage(message, sender)
-      .then((res) => sendResponse(res))
-      .catch((err) => sendResponse({ success: false, error: err.message || 'Translation failed' }));
+    messageRouter.handleMessage({ action: 'TRANSLATE_TEXT', requestId, payload: { ...payload, text } }, sender)
+      .then((res) => {
+        sendResponse({ ...res, requestId: (res && res.requestId) || requestId });
+      })
+      .catch((err) => {
+        sendResponse({ success: false, requestId, error: err.message || 'Translation failed' });
+      });
 
     return true; // Keep channel open for async response
   }

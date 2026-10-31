@@ -27,14 +27,33 @@ class MessageRouter {
    * @returns {Promise<Object>}
    */
   async handleMessage(message, sender) {
-    if (!message || typeof message !== 'object' || !message.action) {
-      return { success: false, error: 'Malformed message: action is required' };
+    if (!message || typeof message !== 'object') {
+      return { success: false, error: 'Malformed message: object expected' };
     }
 
-    const { action, payload } = message;
+    const action = message.action || message.type;
+    if (!action) {
+      return { success: false, error: 'Malformed message: action or type is required' };
+    }
+
+    const payload = message.payload || message;
+    const requestId = message.requestId || (payload && payload.requestId) || null;
 
     try {
       switch (action) {
+        case 'SU_TRANSLATE_TEXT':
+        case 'TRANSLATE_TEXT': {
+          const text = (payload && payload.text) || (typeof payload === 'string' ? payload : null);
+          if (!text || typeof text !== 'string' || !text.trim()) {
+            return { success: false, requestId, error: 'Text to translate is missing' };
+          }
+          const result = await this.services.translationManager.translate(text, {
+            requestId,
+            sourceLanguage: payload && payload.sourceLanguage,
+            targetLanguage: payload && payload.targetLanguage
+          });
+          return { success: true, requestId, ...result };
+        }
         case 'GET_STATUS': {
           const settings = await this.services.settingsStore.getSettings();
           const stats = this.services.statisticsManager.getStats();
@@ -155,13 +174,6 @@ class MessageRouter {
           }
         }
 
-        case 'TRANSLATE_TEXT': {
-          if (!payload || !payload.text) {
-            return { success: false, error: 'Text to translate is missing' };
-          }
-          const result = await this.services.translationManager.translate(payload.text);
-          return { success: true, ...result };
-        }
 
         case 'GET_TRANSLATION_MODEL_STATUS': {
           const state = this.services.translationManager.getState();
@@ -226,7 +238,7 @@ class MessageRouter {
       }
     } catch (err) {
       console.error(`Su_AdBlock MessageRouter error on action "${action}":`, err);
-      return { success: false, error: err.message };
+      return { success: false, requestId, error: err.message };
     }
   }
 }

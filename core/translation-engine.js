@@ -624,7 +624,7 @@ class TranslationEngine {
   }
 
   async _recordHistory(original, translation, engine) {
-    if (!this.settingsStore) return;
+    if (!this.settingsStore || typeof this.settingsStore.get !== 'function') return;
     const isEnabled = await this.settingsStore.get('historyEnabled', false);
     if (!isEnabled) return;
 

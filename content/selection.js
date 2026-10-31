@@ -44,13 +44,11 @@
     return /[a-zA-Z]/.test(clean);
   }
 
-  // Mouseup listener for selection
-  document.addEventListener('mouseup', (e) => {
-    // If click inside host element, ignore
+  function handleSelectionTrigger(targetEl) {
     const host = document.getElementById('su-adblock-translate-host');
-    if (host && host.contains(e.target)) return;
+    if (host && targetEl && host.contains(targetEl)) return;
 
-    if (isEditableElement(e.target)) {
+    if (isEditableElement(targetEl)) {
       if (popup) popup.removeUI();
       return;
     }
@@ -68,13 +66,37 @@
 
       if (!floatingEnabled) return;
 
+      if (selection.rangeCount === 0) return;
       const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
+      let rect = range.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        const clientRects = range.getClientRects();
+        if (clientRects.length > 0) {
+          rect = clientRects[0];
+        }
+      }
+
+      if (rect.width > 0 || rect.height > 0) {
         const p = getPopup();
         if (p) p.showPill(rect, text);
       }
     }, 20);
+  }
+
+  // Mouseup listener for mouse selection
+  document.addEventListener('mouseup', (e) => {
+    handleSelectionTrigger(e.target);
+  });
+
+  // Keyup listener for keyboard selection (Shift + arrows, Home, End)
+  document.addEventListener('keyup', (e) => {
+    if (e.key === 'Escape') {
+      if (popup) popup.removeUI();
+      return;
+    }
+    if (e.shiftKey || ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key)) {
+      handleSelectionTrigger(e.target);
+    }
   });
 
   // Dismiss on clicking outside

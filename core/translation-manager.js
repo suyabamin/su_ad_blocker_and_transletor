@@ -20,17 +20,19 @@ class TranslationManager {
     this._cache = new Map();
   }
 
-  async translate(text) {
+  async translate(text, options = {}) {
     if (!text || typeof text !== 'string' || !text.trim()) {
       throw new Error('Text to translate must be a non-empty string.');
     }
 
     const trimmed = text.trim();
+    const requestId = options.requestId || null;
 
     // Check memory cache first
     if (this._cache.has(trimmed)) {
       const cached = this._cache.get(trimmed);
       return {
+        requestId,
         original: trimmed,
         translation: cached.translation,
         engine: cached.engine,
@@ -45,12 +47,18 @@ class TranslationManager {
       settings = await this.settingsStore.getSettings();
     }
 
-    const provider = settings.translationProvider || 'google_cloud';
+    let provider = settings.translationProvider || 'google_free';
     const googleApiKey = settings.googleApiKey || '';
     const libreTranslateEndpoint = settings.libreTranslateEndpoint || 'https://libretranslate.com';
     const libreTranslateApiKey = settings.libreTranslateApiKey || '';
-    const sourceLanguage = settings.sourceLanguage || 'en';
-    const targetLanguage = settings.targetLanguage || 'bn';
+    const sourceLanguage = options.sourceLanguage || settings.sourceLanguage || 'en';
+    const targetLanguage = options.targetLanguage || settings.targetLanguage || 'bn';
+
+    // If user configured google_cloud without an API key, gracefully fallback to google_free
+    if (provider === 'google_cloud' && (!googleApiKey || !googleApiKey.trim())) {
+      console.warn('[TranslationManager] Google Cloud API key not provided; falling back to Google Free Translation.');
+      provider = 'google_free';
+    }
 
     // 2. Perform online translation via OnlineTranslationService
     const OnlineService = (typeof OnlineTranslationService !== 'undefined')
@@ -58,56 +66,55 @@ class TranslationManager {
       : (typeof require !== 'undefined' ? require('./online-translation-service').OnlineTranslationService : null);
 
     if (OnlineService) {
-      // If user selected google_cloud and has key OR selected google_free or libretranslate
-      if (provider !== 'google_cloud' || (googleApiKey && googleApiKey.trim())) {
-        try {
-          const result = await OnlineService.translate(trimmed, {
-            provider,
-            googleApiKey,
-            libreTranslateEndpoint,
-            libreTranslateApiKey,
-            sourceLanguage,
-            targetLanguage
-          });
+      try {
+        const result = await OnlineService.translate(trimmed, {
+          provider,
+          googleApiKey,
+          libreTranslateEndpoint,
+          libreTranslateApiKey,
+          sourceLanguage,
+          targetLanguage
+        });
 
-          // Record history if enabled
-          if (this.engine && typeof this.engine._recordHistory === 'function') {
-            await this.engine._recordHistory(trimmed, result.translation, result.engine);
-          }
-
-          // Cache in-memory
-          this._cache.set(trimmed, {
-            translation: result.translation,
-            engine: result.engine,
-            provider: result.provider
-          });
-          if (this._cache.size > 500) {
-            const oldestKey = this._cache.keys().next().value;
-            this._cache.delete(oldestKey);
-          }
-
-          return {
-            original: trimmed,
-            translation: result.translation,
-            engine: result.engine,
-            provider: result.provider,
-            cached: false
-          };
-        } catch (err) {
-          throw err;
+        // Record history if enabled
+        if (this.engine && typeof this.engine._recordHistory === 'function') {
+          await this.engine._recordHistory(trimmed, result.translation, result.engine);
         }
-      } else if (provider === 'google_cloud' && !googleApiKey) {
-        // Fall back to local structured engine or inform user
+
+        // Cache in-memory
+        this._cache.set(trimmed, {
+          translation: result.translation,
+          engine: result.engine,
+          provider: result.provider
+        });
+        if (this._cache.size > 500) {
+          const oldestKey = this._cache.keys().next().value;
+          this._cache.delete(oldestKey);
+        }
+
+        return {
+          requestId,
+          original: trimmed,
+          translation: result.translation,
+          engine: result.engine,
+          provider: result.provider,
+          cached: false
+        };
+      } catch (err) {
+        // If online service threw and local engine is available, attempt fallback
         if (this.engine) {
-          return this.engine.translate(trimmed);
+          console.warn('[TranslationManager] Online service error; falling back to local engine:', err.message);
+          const localRes = await this.engine.translate(trimmed);
+          return { requestId, ...localRes };
         }
-        throw new Error('Google Cloud Translation API is not configured. Add your API credentials in Settings.');
+        throw err;
       }
     }
 
     // 3. Fallback to local engine if OnlineService is not loaded
     if (this.engine) {
-      return this.engine.translate(trimmed);
+      const localRes = await this.engine.translate(trimmed);
+      return { requestId, ...localRes };
     }
 
     throw new Error('Translation Engine unavailable.');

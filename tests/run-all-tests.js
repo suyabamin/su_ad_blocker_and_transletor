@@ -11,6 +11,7 @@ const { runTest: testChunker } = require('./text-chunker.test');
 const { runTest: testTranslation } = require('./translation.test');
 const { runTest: testTranslationQuality } = require('./translation-quality.test');
 const { runOnlineTests: testOnlineTranslation } = require('./online-translation.test');
+const { runRepairTestSuite: testFloatingRepair } = require('./floating-translation-repair.test');
 const { runTest: testPrivacy } = require('./privacy-audit.test');
 
 async function main() {
@@ -30,6 +31,7 @@ async function main() {
     { name: 'Translation & Offline Lexicon', fn: testTranslation },
     { name: 'Translation Quality Benchmarks (FitRide & NMT)', fn: testTranslationQuality },
     { name: 'Online Translation & API Benchmarks', fn: testOnlineTranslation },
+    { name: 'Floating Translation & PDF Integration Repairs', fn: testFloatingRepair },
     { name: 'Privacy & Security Network Audit', fn: testPrivacy }
   ];
 
